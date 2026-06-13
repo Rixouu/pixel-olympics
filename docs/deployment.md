@@ -25,13 +25,13 @@ Connect the GitHub repo [Rixouu/derby-royale](https://github.com/Rixouu/derby-ro
 
 ## URLs
 
-After the first deploy, Vercel assigns a production URL such as:
+After the first deploy, production is served at:
 
-`https://derby-royale.vercel.app`
+**https://derby-royale.vercel.app/**
 
 Optional clean alias (configured in `vercel.json`):
 
-`https://your-domain.com/play` → serves the game at `/`
+**https://derby-royale.vercel.app/play** → same game as `/`
 
 ## Custom domain
 
@@ -49,17 +49,12 @@ No secrets or env vars are required for this project.
 
 ## Open Graph / social previews
 
-`index.html` includes `og:*` and `twitter:*` meta tags. Image path is **`/og-image.png`** (relative to your deployed origin).
+`index.html` includes absolute `og:*` and `twitter:*` meta tags for production:
 
-Some crawlers prefer **absolute** image URLs. If link previews look wrong after adding a custom domain, add an absolute `og:url` and `og:image` in `index.html`:
+- **Site:** `https://derby-royale.vercel.app/`
+- **Image:** `https://derby-royale.vercel.app/og-image.png`
 
-```html
-<meta property="og:url" content="https://your-domain.com/">
-<meta property="og:image" content="https://your-domain.com/og-image.png">
-<meta name="twitter:image" content="https://your-domain.com/og-image.png">
-```
-
-Replace `your-domain.com` with your production hostname.
+If you add a **custom domain**, update these URLs in `index.html` (and the `rel="canonical"` link) to match the new hostname.
 
 ## Headers & caching (`vercel.json`)
 

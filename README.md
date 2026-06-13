@@ -4,6 +4,8 @@
 
 Everything runs in a **single HTML file** — no build step, no backend, no install. Open it on a phone or laptop, add up to eight players, and start the race.
 
+**Play now:** [derby-royale.vercel.app](https://derby-royale.vercel.app/)
+
 The game was built by [Jonathan Rycx](https://github.com/Rixouu), who leads product direction, design, and implementation across the Rixouu party-game repos.
 
 [![HTML5 Canvas](https://img.shields.io/badge/Canvas-2D-ff8a2b?style=flat)](https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API)
@@ -83,7 +85,7 @@ Or open `index.html` directly (some browsers restrict audio on `file://`).
 
 1. Import [github.com/Rixouu/derby-royale](https://github.com/Rixouu/derby-royale) in Vercel.
 2. Framework preset: **Other** — leave build/output commands empty.
-3. Deploy — the game is served at `/`.
+3. Deploy — the game is live at **[derby-royale.vercel.app](https://derby-royale.vercel.app/)**.
 
 Optional share URL: **`/play`** (rewrite to `/`). Details in **[docs/deployment.md](docs/deployment.md)**.
 
