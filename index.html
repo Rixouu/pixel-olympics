@@ -18,7 +18,11 @@
 <meta name="twitter:description" content="Pixel-art browser drinking game for up to 8 players. Pick racers, cheer them home, everyone else drinks.">
 <meta name="twitter:image" content="https://derby-royale.vercel.app/og-image.png">
 <link rel="canonical" href="https://derby-royale.vercel.app/">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%231b1430'/%3E%3Crect x='4' y='18' width='24' height='4' fill='%23ffe14d'/%3E%3Crect x='8' y='10' width='6' height='8' fill='%232ee6c0'/%3E%3Crect x='18' y='12' width='6' height='6' fill='%23ff5d8f'/%3E%3C/svg%3E">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32x32.png" sizes="32x32" type="image/png">
+<link rel="icon" href="/favicon-16x16.png" sizes="16x16" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Jersey+10&display=swap" rel="stylesheet">
@@ -70,6 +74,7 @@
   .btn:active{transform:translateY(4px);box-shadow:0 1px 0 0 rgba(0,0,0,.4)}
   .btn-primary{padding:14px;color:var(--line);background:var(--hi);text-shadow:1px 1px 0 rgba(255,255,255,.4)}
   .btn-primary:disabled{filter:saturate(.3) brightness(.7);cursor:not-allowed}
+  .btn-start{margin-top:12px}
   .btn-ghost{margin-top:6px;padding:10px;color:var(--acc);background:var(--panel2)}
   .btn-soft{margin-top:8px;padding:11px;color:var(--ink);background:var(--panel2)}
   /* ---------- settings segs ---------- */
@@ -133,8 +138,10 @@
   .res-medal{font-family:'Press Start 2P';font-size:12px;width:26px;text-align:center;flex:0 0 auto}
   .res-dot{width:16px;height:16px;flex:0 0 auto;border:3px solid var(--line)}
   .res-name{flex:1;min-width:0;font-size:23px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .res-sips{font-family:'Press Start 2P';font-size:9px;color:var(--ink);background:var(--acc);border:2px solid var(--line);padding:4px 7px;flex:0 0 auto;text-align:center;color:var(--line)}
+  .res-sips{font-family:'Press Start 2P';font-size:9px;background:var(--acc);border:2px solid var(--line);padding:4px 7px;flex:0 0 auto;text-align:center;color:var(--line)}
   .res-sips.give{background:var(--bad)}.res-sips.chug{background:var(--chug)}
+  .results-title{font-size:clamp(16px,5vw,22px)}
+  .results-start{margin-top:12px}
   .res-note{margin:10px 0 4px;padding:9px 11px;font-size:18px;line-height:1.2;background:var(--panel2);border:3px solid var(--line);color:var(--ink)}
   .res-note b{color:var(--hi)}
   /* ---------- corner ---------- */
@@ -148,8 +155,8 @@
 </style>
 </head>
 <body>
-<canvas id="game"></canvas>
-<button id="muteBtn" class="corner-btn" title="Sound on/off"><canvas id="muteCanvas" width="22" height="22"></canvas></button>
+<canvas id="game" aria-hidden="true"></canvas>
+<button id="muteBtn" class="corner-btn" type="button" title="Sound on/off" aria-label="Toggle sound" aria-pressed="false"><canvas id="muteCanvas" width="22" height="22" aria-hidden="true"></canvas></button>
 
 <div id="lobby" class="overlay">
   <div class="card">
@@ -175,7 +182,7 @@
       <label class="toggle-row"><div><div class="tt">Power-ups</div><div class="ts">Boosts, bananas, shields &amp; chaos</div></div>
         <div class="switch"><input type="checkbox" id="powerToggle" checked><span></span></div></label>
     </div>
-    <button id="startBtn" class="btn btn-primary" style="margin-top:12px">START THE RACE</button>
+    <button id="startBtn" class="btn btn-primary btn-start" type="button">START THE RACE</button>
     <details>
       <summary>How to play &amp; power-ups</summary>
       <div class="rules">Pick a racer, choose a colour, name them — then cheer them to the finish.<br><br>
@@ -201,12 +208,12 @@
 <div id="results" class="overlay hidden">
   <div class="card">
     <div class="eyebrow">Photo finish</div>
-    <h1 style="font-size:clamp(16px,5vw,22px)">RESULTS</h1>
+    <h1 class="results-title">RESULTS</h1>
     <div class="res-sub" id="resSub"></div>
     <div id="resRows"></div>
     <div class="res-note" id="resNote"></div>
-    <button id="againBtn" class="btn btn-primary" style="margin-top:12px">RACE AGAIN</button>
-    <button id="editBtn" class="btn btn-soft">EDIT PLAYERS &amp; SETTINGS</button>
+    <button id="againBtn" class="btn btn-primary btn-start" type="button">RACE AGAIN</button>
+    <button id="editBtn" class="btn btn-soft" type="button">EDIT PLAYERS &amp; SETTINGS</button>
     <div class="footnote">Hydrate between races</div>
   </div>
 </div>
@@ -234,8 +241,12 @@ function resize(){
   ctx.imageSmoothingEnabled=false;
   // art scale: keep racers a sensible on-screen size across devices
   PXS = Math.max(4, Math.round(Math.min(VW,VH)/115));
+  invalidateTrackMetrics();
 }
 window.addEventListener('resize',resize); resize();
+
+let tabHidden=false;
+document.addEventListener('visibilitychange',function(){ tabHidden=document.hidden; });
 
 /* ---------- color helpers ---------- */
 function hx(h){h=(''+h).replace('#','');return{r:parseInt(h.slice(0,2),16),g:parseInt(h.slice(2,4),16),b:parseInt(h.slice(4,6),16)};}
@@ -458,13 +469,18 @@ let lengthIdx=1, themeIdx=0, sceneIdx=0, powerUpsOn=true;
 let START_X=LENGTHS[lengthIdx].start, FINISH_X=LENGTHS[lengthIdx].finish;
 
 const MAX_PLAYERS=8;
+let trackMetricsCache=null, trackMetricsCacheN=-1;
+function invalidateTrackMetrics(){ trackMetricsCache=null; trackMetricsCacheN=-1; }
 /* On-screen track geometry (in CSS px, recomputed each frame from VW/VH) */
 function trackMetrics(n){
+  if(trackMetricsCache && trackMetricsCacheN===n) return trackMetricsCache;
   var topPad = Math.max(64, VH*0.16);            // sky above
   var botPad = Math.max(48, VH*0.10);
   var bandH  = VH - topPad - botPad;
   var laneH  = bandH / Math.max(n,1);
-  return {topPad, botPad, bandH, laneH};
+  trackMetricsCache={topPad, botPad, bandH, laneH};
+  trackMetricsCacheN=n;
+  return trackMetricsCache;
 }
 /* world-x -> screen-x via camera; lane index -> screen-y center */
 let camX=0;                                       // world x at left edge (in world units)
@@ -644,7 +660,11 @@ function drawMuteIcon(){
   }
 }
 drawMuteIcon();
-document.getElementById('muteBtn').addEventListener('click',function(){ muted=!muted; drawMuteIcon(); });
+document.getElementById('muteBtn').addEventListener('click',function(){
+  muted=!muted;
+  drawMuteIcon();
+  document.getElementById('muteBtn').setAttribute('aria-pressed', muted ? 'true' : 'false');
+});
 
 /* ---------- racer factory ---------- */
 function displayName(p,i){return (p.name||'').trim()||FUN_NAMES[i%FUN_NAMES.length];}
@@ -771,7 +791,7 @@ function drawRacersAndItems(n){
     // shield bubble
     if(r.shielded){ ctx.strokeStyle='rgba(159,232,255,.9)'; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(sx,baseline-GH*p*0.5,GW*p*0.6,0,7); ctx.stroke(); }
     var starred=r.starEnd>clockT;
-    blitSprite(r.charIdx!==undefined?r.charIdx:r.p.charIdx, COLORS[r.p.colorIdx], frame, sx, baseline, p*popScale, starred);
+    blitSprite(r.p.charIdx, COLORS[r.p.colorIdx], frame, sx, baseline, p*popScale, starred);
     // floating fx glyph
     if(r.fxT && realT-r.fxT<0.9){ var age=realT-r.fxT; ctx.globalAlpha=Math.max(0,1-age*1.1);
       ctx.fillStyle=r.fxColor||'#fff'; ctx.font='bold '+Math.round(p*5)+'px "Press Start 2P",monospace'; ctx.textAlign='center';
@@ -939,6 +959,7 @@ startBtn.addEventListener('click',function(){ if(state!=='lobby')return; ac(); p
 let lastT=performance.now();
 function frame(now){
   requestAnimationFrame(frame);
+  if(tabHidden){ lastT=now; return; }
   var realDt=Math.min((now-lastT)/1000,0.05); lastT=now; realT+=realDt;
 
   // slow-mo control

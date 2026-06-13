@@ -95,6 +95,11 @@ Optional share URL: **`/play`** (rewrite to `/`). Details in **[docs/deployment.
 derby-royale/
 ├── index.html           # Full game (production entry point)
 ├── derby-royale.html    # Legacy redirect → /
+├── favicon.svg          # Vector favicon (modern browsers)
+├── favicon-32x32.png
+├── favicon-16x16.png
+├── apple-touch-icon.png # Add to Home Screen (iOS)
+├── site.webmanifest     # PWA-lite install metadata
 ├── og-image.png         # Social / Open Graph preview
 ├── vercel.json          # Headers, cache, /play rewrite
 ├── docs/

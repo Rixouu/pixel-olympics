@@ -20,6 +20,8 @@ Connect the GitHub repo [Rixouu/derby-royale](https://github.com/Rixouu/derby-ro
 |------|---------|
 | `index.html` | Full game (entry point at `/`) |
 | `derby-royale.html` | Legacy redirect → `/` |
+| `favicon.svg`, `favicon-*.png`, `apple-touch-icon.png` | Icons for tabs and home screen |
+| `site.webmanifest` | Install name, theme colour, icons |
 | `og-image.png` | Open Graph / social preview image |
 | `vercel.json` | Security headers, cache, `/play` rewrite |
 
