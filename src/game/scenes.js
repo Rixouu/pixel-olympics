@@ -72,6 +72,28 @@ const SCENES = [
     track: '#4a4048',
     laneLine: '#2e262e',
   },
+  {
+    key: 'racetrack',
+    name: 'Racetrack',
+    sky: ['#4da8ef', '#8bd0ff'],
+    backdrop: '/background/racetrack/01-background.png',
+    trackTexture: '/background/racetrack/02-track.png',
+    overlayFront: '/background/racetrack/03-crowd-front.png',
+    trackTextureSlices: {
+      laneSurfaceTop: 0,
+      laneSurfaceBottom: 0.74,
+      lowerApronTop: 0.69,
+    },
+    skyRatio: 0.4,
+    botRatio: 0.16,
+    minBottomPad: 120,
+    overlayFrontOffsetY: 34,
+    racerYOffset: -54,
+    ground: '#5d9827',
+    groundDark: '#3d6f19',
+    track: '#cf523d',
+    laneLine: '#fff7ee',
+  },
 ];
 
 const THEMES = [

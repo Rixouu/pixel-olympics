@@ -12,6 +12,9 @@ function loadImage(src) {
 export async function loadBackgroundLayers(scenes) {
   const srcs = [];
   scenes.forEach(function (scene) {
+    [scene.backdrop, scene.trackTexture, scene.overlayFront].forEach(function (src) {
+      if (src && srcs.indexOf(src) < 0) srcs.push(src);
+    });
     if (!scene.layers) return;
     scene.layers.forEach(function (layer) {
       if (srcs.indexOf(layer.src) < 0) srcs.push(layer.src);

@@ -29,27 +29,37 @@ let tabHidden=false;
 let lengthIdx=1, themeIdx=0, sceneIdx=0, powerUpsOn=true;
 let START_X=LENGTHS[lengthIdx].start, FINISH_X=LENGTHS[lengthIdx].finish;
 
-let trackMetricsCache=null, trackMetricsCacheN=-1;
-function invalidateTrackMetrics(){ trackMetricsCache=null; trackMetricsCacheN=-1; }
+let trackMetricsCache=null, trackMetricsCacheN=-1, trackMetricsCacheScene=-1;
+function invalidateTrackMetrics(){ trackMetricsCache=null; trackMetricsCacheN=-1; trackMetricsCacheScene=-1; }
+function sceneTrackLayout(){
+  const S=SCENES[sceneIdx]||{};
+  return {
+    skyRatio:S.skyRatio!=null ? S.skyRatio : 0.44,
+    botRatio:S.botRatio!=null ? S.botRatio : 0.10,
+    minBottomPad:S.minBottomPad||0,
+  };
+}
 /* On-screen track geometry — compact pixel-art lanes, generous sky for parallax */
 function trackMetrics(n){
-  if(trackMetricsCache && trackMetricsCacheN===n) return trackMetricsCache;
+  if(trackMetricsCache && trackMetricsCacheN===n && trackMetricsCacheScene===sceneIdx) return trackMetricsCache;
   n=Math.max(n,1);
-  const skyRatio=0.44;
-  const botRatio=0.10;
+  const layout=sceneTrackLayout();
+  const skyRatio=layout.skyRatio;
+  const botPadTarget=Math.max(Math.floor(VH*layout.botRatio), layout.minBottomPad);
   const idealLaneH=Math.round(PXS*(GH+2));
-  const maxBandH=Math.floor(VH*(1-skyRatio-botRatio));
+  const topPad=Math.floor(VH*skyRatio);
+  const maxBandH=Math.max(Math.floor(VH*0.18), VH-topPad-botPadTarget);
   let laneH=idealLaneH;
   let bandH=laneH*n;
   if(bandH>maxBandH){
     laneH=Math.max(Math.floor(PXS*8),Math.floor(maxBandH/n));
     bandH=laneH*n;
   }
-  const topPad=Math.floor(VH*skyRatio);
   const botPad=VH-topPad-bandH;
   const horizonH=Math.max(Math.round(PXS*2),10);
   trackMetricsCache={topPad,botPad,bandH,laneH,horizonH,skyBottom:topPad+horizonH};
   trackMetricsCacheN=n;
+  trackMetricsCacheScene=sceneIdx;
   return trackMetricsCache;
 }
 /* world-x -> screen-x via camera; lane index -> screen-y center */
@@ -63,6 +73,21 @@ function laneCenterY(i,n){ const m=trackMetrics(n); return m.topPad + m.laneH*(i
    ============================================================ */
 let starField=null;
 let backgroundImages={};
+
+function sceneRacerYOffset(){
+  const S=SCENES[sceneIdx];
+  return S && S.racerYOffset ? S.racerYOffset : 0;
+}
+
+function sceneRacerBaselineFactor(){
+  const S=SCENES[sceneIdx];
+  return S && S.racerBaselineFactor != null ? S.racerBaselineFactor : 0.32;
+}
+
+function sceneRacerShadowFactor(){
+  const S=SCENES[sceneIdx];
+  return S && S.racerShadowFactor != null ? S.racerShadowFactor : 0.34;
+}
 
 function drawParallaxLayer(img, parallax, anchorBottom){
   if(!img) return;
@@ -85,6 +110,66 @@ function drawFrontParallaxLayer(img, parallax, anchorBottom, scale){
   ctx.imageSmoothingEnabled=false;
   for(let x=-scroll-tileW; x<VW+tileW; x+=tileW){
     ctx.drawImage(img, Math.round(x), drawY, Math.round(tileW), Math.round(drawH));
+  }
+}
+
+function drawBackdropCover(img, anchorBottom){
+  if(!img) return;
+  const scale=Math.max(VW/img.width, anchorBottom/img.height);
+  const drawW=img.width*scale;
+  const drawH=img.height*scale;
+  const drawX=Math.round((VW-drawW)/2);
+  const drawY=Math.round(anchorBottom-drawH);
+  ctx.imageSmoothingEnabled=false;
+  ctx.drawImage(img, drawX, drawY, Math.round(drawW), Math.round(drawH));
+}
+
+function drawBottomOverlay(img, offsetY){
+  if(!img) return;
+  const scale=VW/img.width;
+  const drawH=img.height*scale;
+  const drawY=Math.round(VH-drawH+(offsetY||0));
+  ctx.imageSmoothingEnabled=false;
+  ctx.drawImage(img, 0, drawY, VW, Math.round(drawH));
+}
+
+function drawTexturedLaneBand(S, m, n){
+  const img=backgroundImages[S.trackTexture];
+  if(!img){
+    drawPixelLaneBand(S,m,n);
+    drawPixelGround(m.topPad+m.bandH+2,VH,S.groundDark,S.track,S.laneLine);
+    return;
+  }
+
+  const slices=S.trackTextureSlices||{};
+  const laneSurfaceTop=Math.max(0, Math.floor(img.height*(slices.laneSurfaceTop||0)));
+  const laneSurfaceBottom=Math.min(img.height, Math.ceil(img.height*(slices.laneSurfaceBottom||0.72)));
+  const lowerApronTop=Math.max(laneSurfaceBottom, Math.floor(img.height*(slices.lowerApronTop||0.72)));
+  const laneSurfaceHeight=Math.max(1, laneSurfaceBottom-laneSurfaceTop);
+  const bottomDestTop=Math.round(m.topPad+m.bandH);
+  const sourceLaneH=Math.max(1, laneSurfaceHeight/n);
+
+  for(let i=0;i<n;i++){
+    const y0=Math.round(m.topPad+m.laneH*i);
+    const y1=y0+m.laneH;
+    const srcY=Math.round(laneSurfaceTop+sourceLaneH*i);
+    const srcH=Math.max(1, Math.round(i===n-1 ? laneSurfaceBottom-srcY : sourceLaneH));
+    ctx.drawImage(img, 0, srcY, img.width, srcH, 0, y0, VW, m.laneH);
+
+    if(i%2===0){
+      ctx.fillStyle='rgba(0,0,0,0.035)';
+      ctx.fillRect(0,y0,VW,m.laneH);
+    }
+
+    ctx.fillStyle='rgba(255,255,255,0.1)';
+    ctx.fillRect(0,y0,VW,Math.max(2,Math.round(m.laneH/18)));
+    ctx.fillStyle=S.laneLine;
+    ctx.fillRect(0,y0,VW,2);
+    if(i===n-1) ctx.fillRect(0,y1-2,VW,2);
+  }
+
+  if(bottomDestTop<VH){
+    ctx.drawImage(img, 0, lowerApronTop, img.width, img.height-lowerApronTop, 0, bottomDestTop, VW, VH-bottomDestTop);
   }
 }
 
@@ -150,7 +235,8 @@ function drawScene(n,timeT){
   const backLayers=[], frontLayers=[];
   layers.forEach(function(layer){ (layer.front? frontLayers : backLayers).push(layer); });
 
-  if(sky) drawVerticalGradient(0,0,VW,m.skyBottom,sky[0],sky[1]);
+  if(S.backdrop && backgroundImages[S.backdrop]) drawBackdropCover(backgroundImages[S.backdrop], m.skyBottom);
+  else if(sky) drawVerticalGradient(0,0,VW,m.skyBottom,sky[0],sky[1]);
 
   ctx.save();
   ctx.beginPath(); ctx.rect(0,0,VW,m.skyBottom); ctx.clip();
@@ -165,8 +251,11 @@ function drawScene(n,timeT){
       ctx.fillRect(Math.floor(s.x*VW), Math.floor(s.y*m.skyBottom*0.82), 2,2); }); ctx.globalAlpha=1; }
 
   drawPixelGround(m.topPad-m.horizonH,m.topPad,S.ground,S.groundDark,S.laneLine);
-  drawPixelLaneBand(S,m,n);
-  drawPixelGround(m.topPad+m.bandH+2,VH,S.groundDark,S.track,S.laneLine);
+  if(S.trackTexture) drawTexturedLaneBand(S,m,n);
+  else {
+    drawPixelLaneBand(S,m,n);
+    drawPixelGround(m.topPad+m.bandH+2,VH,S.groundDark,S.track,S.laneLine);
+  }
 
   const bgScale=backLayers.length && backgroundImages[backLayers[0].src]
     ? m.skyBottom/backgroundImages[backLayers[0].src].height : m.skyBottom/324;
@@ -178,6 +267,11 @@ function drawScene(n,timeT){
   if(T.overlay && T.overlay.indexOf(',0)')<0){ ctx.fillStyle=T.overlay; ctx.fillRect(0,0,VW,VH); }
 
   drawStartFinish(n,m);
+}
+
+function drawSceneOverlay(){
+  const S=SCENES[sceneIdx];
+  if(S.overlayFront && backgroundImages[S.overlayFront]) drawBottomOverlay(backgroundImages[S.overlayFront], S.overlayFrontOffsetY);
 }
 
 function drawStartFinish(n,m){
@@ -462,7 +556,7 @@ function drawRacersAndItems(n){
   var order=racers.map(function(r,idx){return idx;}).sort(function(a,b){return racers[a].i-racers[b].i;});
   order.forEach(function(idx){
     var r=racers[idx]; var sx=worldToScreenX(r.x);
-    var cy=laneCenterY(r.i,n);
+    var cy=laneCenterY(r.i,n)+sceneRacerYOffset();
     var ch=CHARACTERS[r.p.charIdx];
     var frameCount=frameCountFor(ch);
     var idleFrame=idleFrameFor(ch);
@@ -472,10 +566,10 @@ function drawRacersAndItems(n){
     var sz=spriteScreenSize(ch,scale);
     // vertical bob: peaks on the "pass" frames of the cycle
     var bob=(r.gait>0.3)? Math.abs(Math.sin(r.phase*Math.PI*0.5))*(p*1.1) : 0;
-    var baseline=cy + m.laneH*0.32 - bob;
+    var baseline=cy + m.laneH*sceneRacerBaselineFactor() - bob;
     // shadow
     ctx.fillStyle='rgba(0,0,0,.20)'; var shW=sz.w*0.55; ctx.beginPath();
-    ctx.ellipse(sx, cy+m.laneH*0.34, shW*0.5, Math.max(3,p*1.4), 0,0,7); ctx.fill();
+    ctx.ellipse(sx, cy+m.laneH*sceneRacerShadowFactor(), shW*0.5, Math.max(3,p*1.4), 0,0,7); ctx.fill();
     // shield bubble
     if(r.shielded){ ctx.strokeStyle='rgba(159,232,255,.9)'; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(sx,baseline-sz.h*0.5,sz.w*0.45,0,7); ctx.stroke(); }
     var starred=r.starEnd>clockT;
@@ -490,21 +584,21 @@ function drawRacersAndItems(n){
 }
 
 function drawNameLabel(name,color,cx,cy,laneI,n){
-  ctx.font='600 '+Math.max(13,Math.round(PXS*4.2))+'px "Jersey 10",monospace'; ctx.textBaseline='middle';
+  ctx.font='600 '+Math.max(11,Math.round(PXS*3.4))+'px "Jersey 10",monospace'; ctx.textBaseline='middle';
   var tw=ctx.measureText(name).width;
-  var padX=8, dot=Math.max(8,PXS*2.4), gap=5;
-  var w=padX*2+dot+gap+tw, h=Math.max(20,PXS*6);
+  var padX=6, dot=Math.max(6,PXS*1.8), gap=4;
+  var w=padX*2+dot+gap+tw, h=Math.max(16,PXS*4.6);
   // stagger label vertically a touch by lane parity to reduce overlap when bunched
-  var yy=cy - (laneI%2? 0: h*0.0);
+  var yy=cy - h*0.3 - (laneI%2? 0: 1);
   var x=cx - w/2;
   // box
-  ctx.fillStyle='rgba(61,48,24,.88)'; ctx.fillRect(Math.round(x),Math.round(yy-h/2),Math.round(w),Math.round(h));
-  ctx.fillStyle='rgba(255,255,255,.12)'; ctx.fillRect(Math.round(x),Math.round(yy-h/2),Math.round(w),2);
+  ctx.fillStyle='rgba(44,37,28,.68)'; ctx.fillRect(Math.round(x),Math.round(yy-h/2),Math.round(w),Math.round(h));
+  ctx.fillStyle='rgba(255,255,255,.08)'; ctx.fillRect(Math.round(x),Math.round(yy-h/2),Math.round(w),1);
   // dot
   ctx.fillStyle=color; ctx.fillRect(Math.round(x+padX),Math.round(yy-dot/2),Math.round(dot),Math.round(dot));
-  ctx.fillStyle='rgba(61,48,24,.35)'; ctx.fillRect(Math.round(x+padX),Math.round(yy-dot/2),Math.round(dot),2);
+  ctx.fillStyle='rgba(61,48,24,.22)'; ctx.fillRect(Math.round(x+padX),Math.round(yy-dot/2),Math.round(dot),1);
   // text
-  ctx.fillStyle='#f5e6c4'; ctx.textAlign='left'; ctx.fillText(name, Math.round(x+padX+dot+gap), Math.round(yy)+1);
+  ctx.fillStyle='rgba(245,230,196,.92)'; ctx.textAlign='left'; ctx.fillText(name, Math.round(x+padX+dot+gap), Math.round(yy)+1);
 }
 
 /* ============================================================
@@ -712,6 +806,7 @@ function frame(now){
   ctx.clearRect(0,0,VW,VH);
   drawScene(n,clockT);
   drawRacersAndItems(n);
+  drawSceneOverlay();
 
   // HUD + events
   if(state==='racing'||state==='countdown'){ hudTick+=realDt; if(hudTick>0.2){ hudTick=0; renderHUD(); }
