@@ -800,6 +800,7 @@ function viewUnits(){
 let lobbyEl, listEl, addBtn, startBtn, restartBtn, hudEl, hudRows, countWrap, countNum, resultsEl, eventToast, finishFlash, photoTag;
 let lobbyTabBtns=[], lobbyPanels=[];
 let mobileRosterIdx=0;
+let desktopRosterIdx=0;
 
 function syncRestartButton(){
   if(!restartBtn) return;
@@ -916,13 +917,20 @@ function setMobileRosterIdx(idx){
   if(!players.length){ mobileRosterIdx=0; return; }
   mobileRosterIdx=(idx+players.length)%players.length;
 }
+function setDesktopRosterIdx(idx){
+  if(!players.length){ desktopRosterIdx=0; return; }
+  desktopRosterIdx=(idx+players.length)%players.length;
+}
 function removePlayerAt(idx){
   players.splice(idx,1);
   mobileRosterIdx=Math.max(0,Math.min(mobileRosterIdx,players.length-1));
+  desktopRosterIdx=Math.max(0,Math.min(desktopRosterIdx,players.length-1));
   renderLobby();
 }
-function makePlayerEditor(p,i,mobile){
-  const row=document.createElement('div'); row.className='player-row'+(mobile?' player-row-mobile':'');
+function makePlayerEditor(p,i,mode){
+  const mobile=mode==='mobile';
+  const desktop=mode==='desktop';
+  const row=document.createElement('div'); row.className='player-row'+(mobile?' player-row-mobile':desktop?' player-row-desktop':'');
   const sw=document.createElement('div'); sw.className='swatch'; sw.style.background=COLORS[p.colorIdx]; sw.title='Colour';
   const pick=document.createElement('button'); pick.className='pick'; pick.title='Change racer';
   const pc=document.createElement('canvas'); pick.appendChild(pc); drawPickPreview(pc,p.charIdx,COLORS[p.colorIdx]);
@@ -944,6 +952,20 @@ function makePlayerEditor(p,i,mobile){
     row.appendChild(head); row.appendChild(controls);
     return row;
   }
+  if(desktop){
+    const head=document.createElement('div'); head.className='player-desktop-head';
+    const title=document.createElement('div'); title.className='player-desktop-title'; title.textContent='Racer '+(i+1);
+    head.appendChild(title);
+    if(players.length>2){
+      const rm=document.createElement('button'); rm.className='remove'; rm.textContent='X'; rm.title='Remove';
+      rm.addEventListener('click',function(){ removePlayerAt(i); });
+      head.appendChild(rm);
+    }
+    const controls=document.createElement('div'); controls.className='player-desktop-controls';
+    controls.appendChild(sw); controls.appendChild(pick); controls.appendChild(input);
+    row.appendChild(head); row.appendChild(controls);
+    return row;
+  }
   row.appendChild(sw); row.appendChild(pick); row.appendChild(input);
   if(players.length>2){
     const rm=document.createElement('button'); rm.className='remove'; rm.textContent='X'; rm.title='Remove';
@@ -956,15 +978,6 @@ function renderLobby(){ listEl.innerHTML='';
   if(isCompactLobby()){
     setMobileRosterIdx(mobileRosterIdx);
     const activePlayer=players[mobileRosterIdx];
-    const nav=document.createElement('div'); nav.className='player-mobile-nav';
-    const prev=document.createElement('button'); prev.type='button'; prev.className='player-mobile-arrow'; prev.textContent='<<'; prev.title='Previous racer';
-    prev.addEventListener('click',function(){ setMobileRosterIdx(mobileRosterIdx-1); renderLobby(); });
-    const summary=document.createElement('button'); summary.type='button'; summary.className='player-mobile-summary';
-    summary.innerHTML='<span class="player-mobile-summary-label">Racer '+(mobileRosterIdx+1)+' / '+players.length+'</span><span class="player-mobile-summary-name">'+escapeHtml(displayName(activePlayer,mobileRosterIdx))+'</span>';
-    const next=document.createElement('button'); next.type='button'; next.className='player-mobile-arrow'; next.textContent='>>'; next.title='Next racer';
-    next.addEventListener('click',function(){ setMobileRosterIdx(mobileRosterIdx+1); renderLobby(); });
-    nav.appendChild(prev); nav.appendChild(summary); nav.appendChild(next);
-    listEl.appendChild(nav);
     const tabs=document.createElement('div'); tabs.className='player-mobile-tabs';
     players.forEach(function(p,i){
       const slot=document.createElement('button');
@@ -976,9 +989,22 @@ function renderLobby(){ listEl.innerHTML='';
       tabs.appendChild(slot);
     });
     listEl.appendChild(tabs);
-    listEl.appendChild(makePlayerEditor(activePlayer,mobileRosterIdx,true));
+    listEl.appendChild(makePlayerEditor(activePlayer,mobileRosterIdx,'mobile'));
   } else {
-    players.forEach(function(p,i){ listEl.appendChild(makePlayerEditor(p,i,false)); });
+    setDesktopRosterIdx(desktopRosterIdx);
+    const activePlayer=players[desktopRosterIdx];
+    const tabs=document.createElement('div'); tabs.className='player-desktop-tabs';
+    players.forEach(function(p,i){
+      const slot=document.createElement('button');
+      slot.type='button';
+      slot.className='player-desktop-slot'+(i===desktopRosterIdx?' active':'');
+      slot.innerHTML='<span class="player-desktop-slot-dot" style="background:'+COLORS[p.colorIdx]+'"></span><span class="player-desktop-slot-copy"><span class="player-desktop-slot-num">RACER '+(i+1)+'</span><span class="player-desktop-slot-name">'+escapeHtml(displayName(p,i))+'</span></span>';
+      slot.title=displayName(p,i);
+      slot.addEventListener('click',function(){ desktopRosterIdx=i; renderLobby(); });
+      tabs.appendChild(slot);
+    });
+    listEl.appendChild(tabs);
+    listEl.appendChild(makePlayerEditor(activePlayer,desktopRosterIdx,'desktop'));
   }
   addBtn.textContent=players.length>=MAX_PLAYERS?('ROSTER FULL ('+MAX_PLAYERS+')'):('+ ADD PLAYER  ·  '+players.length+'/'+MAX_PLAYERS);
   addBtn.disabled=players.length>=MAX_PLAYERS; addBtn.style.opacity=addBtn.disabled?0.5:1;
