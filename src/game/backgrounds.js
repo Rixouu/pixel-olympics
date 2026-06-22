@@ -9,22 +9,34 @@ function loadImage(src) {
   });
 }
 
-export async function loadBackgroundLayers(scenes) {
+export function sceneImageSources(scene) {
   const srcs = [];
-  scenes.forEach(function (scene) {
-    [scene.backdrop, scene.trackTexture].forEach(function (src) {
-      if (src && srcs.indexOf(src) < 0) srcs.push(src);
-    });
-    if (!scene.layers) return;
-    scene.layers.forEach(function (layer) {
-      if (srcs.indexOf(layer.src) < 0) srcs.push(layer.src);
-    });
+  [scene.backdrop, scene.trackTexture].forEach(function (src) {
+    if (src && srcs.indexOf(src) < 0) srcs.push(src);
   });
+  if (!scene.layers) return srcs;
+  scene.layers.forEach(function (layer) {
+    if (srcs.indexOf(layer.src) < 0) srcs.push(layer.src);
+  });
+  return srcs;
+}
+
+export async function loadBackgroundImages(srcs) {
   const images = {};
   await Promise.all(srcs.map(function (src) {
     return loadImage(src).then(function (img) { images[src] = img; });
   }));
   return images;
+}
+
+export async function loadBackgroundLayers(scenes) {
+  const srcs = [];
+  scenes.forEach(function (scene) {
+    sceneImageSources(scene).forEach(function (src) {
+      if (srcs.indexOf(src) < 0) srcs.push(src);
+    });
+  });
+  return loadBackgroundImages(srcs);
 }
 
 /** Default parallax factor by layer index (0 = sky, slowest). */

@@ -6,7 +6,7 @@ import { rnd } from './color.js';
 import { CHARACTERS, CHAR_COUNT } from './characters.js';
 import { loadSpriteSheets, frameCountFor, idleFrameFor, spriteScreenSize } from './sprite-sheets.js';
 import { SCENES } from './scenes.js';
-import { loadBackgroundLayers, defaultParallax } from './backgrounds.js';
+import { loadBackgroundImages, loadBackgroundLayers, sceneImageSources, defaultParallax } from './backgrounds.js';
 
 /* ---------- low-res pixel canvas ---------- */
 let view, ctx;
@@ -151,6 +151,12 @@ function laneBounds(i,n){
    ============================================================ */
 let backgroundImages={};
 let powerupImage=null;
+let lobbySceneReveal=0;
+
+function currentSceneArtReady(){
+  const S=SCENES[sceneIdx];
+  return !!(S.backdrop && S.trackTexture && backgroundImages[S.backdrop] && backgroundImages[S.trackTexture]);
+}
 
 function sceneRacerYOffset(){
   const S=SCENES[sceneIdx];
@@ -355,33 +361,49 @@ function drawScene(n){
   const sky=S.sky;
   const layers=S.layers||[];
   const backLayers=[], frontLayers=[];
+  const artAlpha=(state==='lobby') ? lobbySceneReveal : 1;
   layers.forEach(function(layer){ (layer.front? frontLayers : backLayers).push(layer); });
 
-  if(S.backdrop && backgroundImages[S.backdrop]) drawBackdropCover(backgroundImages[S.backdrop], m.skyBottom);
-  else if(sky) drawVerticalGradient(0,0,VW,m.skyBottom,sky[0],sky[1]);
+  if(sky) drawVerticalGradient(0,0,VW,m.skyBottom,sky[0],sky[1]);
+  if(S.backdrop && backgroundImages[S.backdrop] && artAlpha>0){
+    ctx.save();
+    ctx.globalAlpha=artAlpha;
+    drawBackdropCover(backgroundImages[S.backdrop], m.skyBottom);
+    ctx.restore();
+  }
 
-  ctx.save();
-  ctx.beginPath(); ctx.rect(0,0,VW,m.skyBottom); ctx.clip();
-  backLayers.forEach(function(layer,i){
-    const par=layer.parallax!=null? layer.parallax : defaultParallax(i,backLayers.length);
-    drawParallaxLayer(backgroundImages[layer.src], par, m.skyBottom);
-  });
-  ctx.restore();
+  if(artAlpha>0){
+    ctx.save();
+    ctx.globalAlpha=artAlpha;
+    ctx.beginPath(); ctx.rect(0,0,VW,m.skyBottom); ctx.clip();
+    backLayers.forEach(function(layer,i){
+      const par=layer.parallax!=null? layer.parallax : defaultParallax(i,backLayers.length);
+      drawParallaxLayer(backgroundImages[layer.src], par, m.skyBottom);
+    });
+    ctx.restore();
+  }
 
-  if(S.trackTexture) {
+  drawPixelGround(m.topPad-m.horizonH,m.topPad,S.ground,S.groundDark,S.laneLine);
+  drawPixelLaneBand(S,m,n);
+  drawPixelGround(m.topPad+m.bandH+2,VH,S.groundDark,S.track,S.laneLine);
+  if(S.trackTexture && backgroundImages[S.trackTexture] && artAlpha>0) {
+    ctx.save();
+    ctx.globalAlpha=artAlpha;
     drawTexturedLaneBand(S,m,n);
-  } else {
-    drawPixelGround(m.topPad-m.horizonH,m.topPad,S.ground,S.groundDark,S.laneLine);
-    drawPixelLaneBand(S,m,n);
-    drawPixelGround(m.topPad+m.bandH+2,VH,S.groundDark,S.track,S.laneLine);
+    ctx.restore();
   }
 
   const bgScale=backLayers.length && backgroundImages[backLayers[0].src]
     ? m.skyBottom/backgroundImages[backLayers[0].src].height : m.skyBottom/324;
-  frontLayers.forEach(function(layer,i){
-    const par=layer.parallax!=null? layer.parallax : defaultParallax(backLayers.length+i,layers.length);
-    drawFrontParallaxLayer(backgroundImages[layer.src], par, m.topPad, bgScale);
-  });
+  if(artAlpha>0){
+    ctx.save();
+    ctx.globalAlpha=artAlpha;
+    frontLayers.forEach(function(layer,i){
+      const par=layer.parallax!=null? layer.parallax : defaultParallax(backLayers.length+i,layers.length);
+      drawFrontParallaxLayer(backgroundImages[layer.src], par, m.topPad, bgScale);
+    });
+    ctx.restore();
+  }
 
   drawStartFinish(m);
 }
@@ -1101,6 +1123,8 @@ function frame(now){
   if(slowmoActive){ if(finishOrder.length>0 && realT-slowmoCueT>0.45) setSlowmo(false); if(state!=='racing' && realT-winnerCrossRealT>1.0) setSlowmo(false); }
   timeScale += (target-timeScale)*Math.min(realDt*4,1);
   var dt=realDt*timeScale; clockT+=dt;
+  const revealTarget=currentSceneArtReady() ? 1 : 0;
+  lobbySceneReveal += (revealTarget-lobbySceneReveal)*Math.min(realDt*5,1);
 
   if(state==='racing'||state==='countdown') updateRacers(dt);
   updateCamera(realDt);
@@ -1116,15 +1140,34 @@ function frame(now){
     if(state==='racing'&&realT>nextEventT){ fireEvent(); nextEventT=realT+rnd(12,18); } }
 }
 
-export async function bootGame() {
-  [sheetImages, backgroundImages, powerupImage]=await Promise.all([
-    loadSpriteSheets(CHARACTERS),
-    loadBackgroundLayers(SCENES),
-    loadImage(POWERUP_ASSET_SRC),
-  ]);
+export function bootGame() {
   bindUi();
   installDebugTools();
   renderLobby();
   buildRacers();
   requestAnimationFrame(frame);
+
+  // Paint the fallback lobby immediately, then stream in the active arena first.
+  loadBackgroundImages(sceneImageSources(SCENES[sceneIdx])).then(function(images){
+    Object.assign(backgroundImages, images);
+  }).catch(function(err){
+    console.error(err);
+  });
+
+  Promise.allSettled([
+    loadSpriteSheets(CHARACTERS),
+    loadBackgroundLayers(SCENES),
+    loadImage(POWERUP_ASSET_SRC),
+  ]).then(function(results){
+    if(results[0].status==='fulfilled') sheetImages=results[0].value;
+    else console.error(results[0].reason);
+
+    if(results[1].status==='fulfilled') Object.assign(backgroundImages, results[1].value);
+    else console.error(results[1].reason);
+
+    if(results[2].status==='fulfilled') powerupImage=results[2].value;
+    else console.error(results[2].reason);
+
+    if(state==='lobby') renderLobby();
+  });
 }
