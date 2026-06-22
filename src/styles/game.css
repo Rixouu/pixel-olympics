@@ -161,15 +161,37 @@
   #restartBtn{top:58px;left:10px;font-family:'Press Start 2P',monospace;font-size:14px}
   #muteCanvas{image-rendering:pixelated;display:block;margin:auto}
   @media (max-width:780px){ .tagline{font-size:18px} }
-  @media (min-width:621px) and (max-height:860px){
+  @media (min-width:1441px) and (max-height:920px){
+    .overlay{padding:8px}
+    .card{padding:15px 14px 12px;max-height:92vh}
+    .lobby-card{width:min(510px,95vw)}
+    h1{font-size:clamp(18px,4.2vw,25px);margin:8px 0 5px}
+    .tagline{font-size:19px;line-height:1.03;margin-bottom:9px}
+    .lobby-tabs{gap:5px;margin:0 0 9px}
+    .lobby-panels{padding:9px 9px 7px;min-height:252px}
+    .section-head{gap:3px;margin-bottom:7px}
+    #playerList{gap:7px;margin:3px 0 7px}
+    .player-desktop-slot{padding:7px 8px;min-height:44px}
+    .player-desktop-slot-name{font-size:18px}
+    .player-row-desktop{padding:9px;gap:9px}
+    .player-desktop-controls{grid-template-columns:46px 56px 1fr;gap:7px}
+    .player-row-desktop .swatch{width:46px;height:46px}
+    .player-row-desktop .pick{width:56px;height:46px}
+    .player-row-desktop input{min-height:46px;font-size:23px}
+    .hint{font-size:16px}
+    .btn-start{margin-top:10px}
+    .btn-primary{padding:12px}
+    .footnote{margin-top:9px;font-size:13px}
+  }
+  @media (min-width:621px) and (max-width:1440px) and (max-height:900px){
     .overlay{padding:8px}
     .card{padding:14px 13px 11px;max-height:92vh}
-    .lobby-card{width:min(500px,95vw)}
+    .lobby-card{width:min(496px,95vw)}
     h1{font-size:clamp(18px,4.6vw,24px);margin:7px 0 4px}
     .tagline{font-size:18px;line-height:1.02;margin-bottom:8px}
     .lobby-tabs{gap:5px;margin:0 0 8px}
     .lobby-tab{padding:8px 5px;font-size:8px}
-    .lobby-panels{padding:8px 8px 6px;min-height:244px}
+    .lobby-panels{padding:8px 8px 6px;min-height:236px}
     .section-head{gap:3px;margin-bottom:6px}
     #playerList{gap:6px;margin:2px 0 6px}
     .player-desktop-tabs{gap:4px}
@@ -186,7 +208,7 @@
     .btn-ghost,.btn-soft{padding:9px}
     .footnote{margin-top:9px;font-size:13px}
   }
-  @media (min-width:621px) and (max-height:760px){
+  @media (min-width:621px) and (max-width:1440px) and (max-height:780px){
     .card{padding:12px 12px 10px;max-height:91vh}
     .lobby-card{width:min(484px,94vw)}
     .eyebrow{font-size:8px}
