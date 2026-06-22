@@ -1,6 +1,6 @@
 # Art assets guide
 
-How to add **PNG character sprites** and **parallax background layers**. For scenes and power-ups in code, see [extending.md](./extending.md).
+How to add **PNG character sprites** and **scene pack background art**. For scenes and power-ups in code, see [extending.md](./extending.md).
 
 Run **`pnpm dev`** while testing assets locally. Files under **`public/`** are copied to **`dist/`** on build and served from the site root.
 
@@ -115,31 +115,30 @@ Keep license files or links (e.g. [Craftpix licenses](https://craftpix.net/file-
 
 ## Background art (PNG) — implemented
 
-Scenes use **layered parallax PNGs** in the sky/horizon band above the track. The lane area uses **opaque** colours (same as the original procedural layout) so racers stay readable.
+Scenes now use a fixed three-file scene pack instead of the older layered parallax background system.
 
 ### Folder layout
 
 ```txt
 public/background/
-├── beach/01-coast.png
-├── meadow/01-sky.png … 08-front-detail.png
-├── snow/01-sky.png … 04-front.png
-├── desert/01-sky.png, 02-rocks.png
-└── volcano/01-sky.png, 02-aurora.png, 03-mountains.png
+└── volcanic-racing/
+    ├── 01-background.png
+    ├── 02-track.png
+    └── 03-crowd-front.png
 ```
 
-URL in code: **`/background/<scene>/<layer>.png`**.
+URL in code: **`/background/<scene>/<file>.png`**.
 
 ### Asset requirements
 
 | Requirement | Detail |
 |-------------|--------|
 | **Format** | PNG |
-| **Layout** | One layer per file, back → front order in `scenes.js` |
-| **Size** | Bundled Craftpix layers are **576 × 324**; scaled to viewport height |
-| **Layout** | Parallax fills ~44% sky band; lanes use fixed pixel height (`PXS × 24`); dithered lane texture; optional `front: true` layers for trees |
-| **Tiling** | Layers tile horizontally; left/right edges should match for seamless scroll |
-| **Parallax** | Optional `parallax` per layer (0 = slowest); defaults in `backgrounds.js` |
+| **Layout** | One background, one track, one front crowd file per scene |
+| **Background size** | Use [asset-dimensions.md](./asset-dimensions.md) for the current exact spec; the current one-file background target is **3200 × 1100** |
+| **Track size** | Recommended **2560 × 960** |
+| **Crowd size** | Recommended **2560 × 280** |
+| **Transparency** | `03-crowd-front.png` should keep a transparent background |
 
 ### Register in code
 
@@ -147,28 +146,22 @@ Add or edit a scene in **`src/game/scenes.js`**:
 
 ```javascript
 {
-  key: 'desert',
-  name: 'Desert',
-  layers: [
-    { src: '/background/desert/01-sky.png' },
-    { src: '/background/desert/02-rocks.png', parallax: 0.35 },
-  ],
-  track: 'rgba(236,214,168,0.5)',
-  groundDark: 'rgba(208,168,95,0.5)',
-  laneLine: 'rgba(205,177,120,0.7)',
-},
+  key: 'volcanic-racing',
+  name: 'Volcanic Racing',
+  backdrop: '/background/volcanic-racing/01-background.png',
+  trackTexture: '/background/volcanic-racing/02-track.png',
+  overlayFront: '/background/volcanic-racing/03-crowd-front.png',
+}
 ```
 
-**`src/game/backgrounds.js`** loads all unique `layer.src` paths on boot. **`drawScene()`** in **`engine.js`** draws layers bottom-aligned, scaled to viewport height, with horizontal scroll tied to camera position.
-
-Night theme still adds stars and a colour overlay on top (`THEMES` in `scenes.js`).
+**`src/game/backgrounds.js`** loads `scene.backdrop`, `scene.trackTexture`, and `scene.overlayFront` on boot. **`drawScene()`** in **`engine.js`** draws the background above the track, the track texture across the race lanes, and the crowd as the front overlay.
 
 ### Background checklist
 
-- [ ] PNG layers under `public/background/<scene>/`
-- [ ] Layers listed in order (sky first) in `scenes.js`
-- [ ] Seamless left/right edges on scrolling layers
-- [ ] Lane rgba colours keep racers readable on the art
+- [ ] `01-background.png`, `02-track.png`, `03-crowd-front.png` exist under `public/background/<scene>/`
+- [ ] Background matches the current size guidance in [asset-dimensions.md](./asset-dimensions.md)
+- [ ] Crowd export keeps transparency and minimal empty padding
+- [ ] Track art keeps racers readable
 - [ ] `pnpm dev` — cycle scenes in lobby, race on mobile + desktop widths
 
 ---
@@ -179,11 +172,13 @@ Night theme still adds stars and a colour overlay on top (`THEMES` in `scenes.js
 |------------|----------|-----------------|--------|
 | Character run sheet | `public/sprites/<key>/run.png` | `characters.js` → `sheet:` | **Live** |
 | Scene lane colours | — | `scenes.js` → `track`, `groundDark`, `laneLine` | **Live** |
-| Background PNG layers | `public/background/<scene>/…` | `scenes.js` → `layers[]`, `backgrounds.js`, `drawScene()` | **Live** |
+| Scene pack art | `public/background/<scene>/…` | `scenes.js` → `backdrop`, `trackTexture`, `overlayFront` | **Live** |
 
 ---
 
 ## Related docs
 
 - [extending.md](./extending.md) — scenes, power-ups
+- [asset-dimensions.md](./asset-dimensions.md) — exact scene pack sizes
+- [scene-safe-zones.md](./scene-safe-zones.md) — background and crowd placement guide
 - [deployment.md](./deployment.md) — build output includes `public/` assets

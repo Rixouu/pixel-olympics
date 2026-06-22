@@ -1,14 +1,14 @@
 # Game rules
 
-Derby Royale is a **party drinking game** layered on a random pixel-art race. The game calculates sip counts on the results screen — agree on house rules before you start.
+Pixel Olympics is a **party drinking game** layered on a random pixel-art race. The game calculates sip counts on the results screen — agree on house rules before you start.
 
 **18+ · Drink responsibly · Water counts too**
 
 ## Setup
 
-1. Add **2–8 players** in the lobby.
+1. Add **2–6 players** in the lobby.
 2. Each player picks a **name**, **colour**, and **racer sprite**.
-3. Choose **scene**, **time of day**, and **race length**.
+3. Choose **scene** and **race length**.
 4. Toggle **power-ups** on (chaos) or off (pure speed luck).
 5. Tap **START THE RACE** and watch the live standings HUD.
 

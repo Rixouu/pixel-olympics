@@ -8,7 +8,6 @@ const COMMON_SCENE = {
   skyRatio: 0.4,
   botRatio: 0.16,
   minBottomPad: 120,
-  overlayFrontOffsetY: -28,
   racerYOffset: -54,
 };
 
@@ -20,7 +19,6 @@ function makeScene(config) {
     sky: config.sky,
     backdrop: '/background/' + config.folder + '/01-background.png',
     trackTexture: '/background/' + config.folder + '/02-track.png',
-    overlayFront: '/background/' + config.folder + '/03-crowd-front.png',
     trackTextureSlices: { ...TRACK_TEXTURE_SLICES },
     ...COMMON_SCENE,
     ground: config.ground,
@@ -32,11 +30,11 @@ function makeScene(config) {
 
 const SCENES = [
   makeScene({
-    key: 'racetrack',
-    name: 'Racetrack',
-    pickerLabel: 'Track',
-    folder: 'race-track',
-    sky: ['#4da8ef', '#8bd0ff'],
+    key: 'enchanted-forest',
+    name: 'Enchanted Forest',
+    pickerLabel: 'Forest',
+    folder: 'enchantered-forest',
+    sky: ['#4f7c69', '#c9f1c8'],
     ground: '#5d9827',
     groundDark: '#3d6f19',
     track: '#cf523d',

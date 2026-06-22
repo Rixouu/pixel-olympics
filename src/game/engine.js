@@ -134,15 +134,6 @@ function drawBackdropCover(img, anchorBottom){
   ctx.drawImage(img, drawX, drawY, Math.round(drawW), Math.round(drawH));
 }
 
-function drawBottomOverlay(img, offsetY){
-  if(!img) return;
-  const scale=VW/img.width;
-  const drawH=img.height*scale;
-  const drawY=Math.round(VH-drawH+(offsetY||0));
-  ctx.imageSmoothingEnabled=false;
-  ctx.drawImage(img, 0, drawY, VW, Math.round(drawH));
-}
-
 function drawTexturedLaneBand(S, m, n){
   const img=backgroundImages[S.trackTexture];
   if(!img){
@@ -256,11 +247,6 @@ function drawScene(n){
   });
 
   drawStartFinish(m);
-}
-
-function drawSceneOverlay(){
-  const S=SCENES[sceneIdx];
-  if(S.overlayFront && backgroundImages[S.overlayFront]) drawBottomOverlay(backgroundImages[S.overlayFront], S.overlayFrontOffsetY);
 }
 
 function drawStartFinish(m){
@@ -852,7 +838,6 @@ function frame(now){
   ctx.clearRect(0,0,VW,VH);
   drawScene(n);
   drawRacersAndItems(n);
-  drawSceneOverlay();
 
   // HUD + events
   if(state==='racing'||state==='countdown'){ hudTick+=realDt; if(hudTick>0.2){ hudTick=0; renderHUD(); }

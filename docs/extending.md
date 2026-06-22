@@ -1,4 +1,4 @@
-# Extending Derby Royale
+# Extending Pixel Olympics
 
 Source lives under **`src/game/`**. Run **`pnpm dev`** while editing, then **`pnpm build`** before deploy.
 
@@ -10,8 +10,7 @@ Comments in `characters.js` and `scenes.js` mark the main extension points.
 |--------|------|
 | `CHARACTERS` | Racer sprites — PNG run sheets (`public/sprites/`) |
 | `COLORS` | Player colour swatches |
-| `SCENES` | Parallax background layers + lane colours |
-| `THEMES` | Time-of-day overlays (day / sunset / night) |
+| `SCENES` | Scene registry for background + track art |
 | `POWERUP_TYPES` | Pickup behaviour keys |
 | `buildRacers()` | Creates sim state from lobby `players` |
 | `drawScene()` | Paints background + track |
@@ -35,32 +34,27 @@ All racers use **PNG sprite sheets**. See **[assets.md](./assets.md)** for how t
 
 ## Adding a scene
 
-Scenes use **PNG parallax layers** plus semi-transparent lane colours. See **[assets.md](./assets.md)** for layer sizes and folder layout.
+Scenes use **PNG background + track** art. See **[assets.md](./assets.md)** for asset sizes and folder layout.
 
-1. Add PNG layers under **`public/background/<key>/`** (numbered filenames, back → front).
+1. Add scene art under **`public/background/<key>/`**.
 2. Add an entry to **`SCENES`** in **`src/game/scenes.js`**:
 
 ```javascript
 {
   key: 'city',
   name: 'City',
-  layers: [
-    { src: '/background/city/01-sky.png' },
-    { src: '/background/city/02-skyline.png', parallax: 0.25 },
-  ],
-  track: 'rgba(120,120,130,0.5)',
-  groundDark: 'rgba(80,80,90,0.5)',
-  laneLine: 'rgba(100,100,110,0.7)',
+  folder: 'city',
+  sky: ['#4da8ef', '#8bd0ff'],
+  ground: '#5d9827',
+  groundDark: '#3d6f19',
+  track: '#cf523d',
+  laneLine: '#fff7ee',
 },
 ```
 
-3. Add a lobby button in **`index.html`** `#sceneSeg` (copy an existing `<button data-i="…">`).
+3. Scene buttons are generated automatically from `SCENES`, so no extra lobby markup is needed.
 
-Scene index `data-i` must match the array index (0-based). New layer paths load automatically on boot via **`loadBackgroundLayers()`**.
-
-## Time of day
-
-`THEMES` applies colour overlays on top of any scene. Usually you **don’t** need new entries unless you want a fourth mood (e.g. dawn).
+New scene asset paths load automatically on boot via **`loadBackgroundLayers()`**.
 
 ## Power-ups
 
@@ -88,8 +82,8 @@ SFX uses the **Web Audio API** (`tone()`, `sfxPow()`, etc.). Hook new events the
 ## Testing checklist
 
 - [ ] New character renders in picker preview and in-race at multiple `PXS` scales
-- [ ] New scene layers don’t obscure the start/finish line
-- [ ] 2-player and 8-player lobbies both work
+- [ ] New scene art keeps the start/finish line readable
+- [ ] 2-player and 6-player lobbies both work
 - [ ] Power-up off/on paths still run
 - [ ] Mobile viewport (narrow width, short height)
 - [ ] `prefers-reduced-motion` — countdown still readable

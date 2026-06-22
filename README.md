@@ -1,10 +1,10 @@
-# 🏁 Derby Royale
+# 🏁 Pixel Olympics
 
-**Derby Royale** is a browser drinking game built around a side-scrolling pixel-art race: pick your racers, cheer them to the finish line, and let the standings decide who sips.
+**Pixel Olympics** is a browser drinking game built around a side-scrolling pixel-art race: pick your racers, cheer them to the finish line, and let the standings decide who sips.
 
 Everything runs in the **browser** — no backend, no accounts. Clone the repo and run **`pnpm dev`**, or play the live build on a phone or laptop. Add up to six players and start the race.
 
-**Play now:** [derby-royale.vercel.app](https://derby-royale.vercel.app/)
+**Play now:** [pixel-olympics.vercel.app](https://pixel-olympics.vercel.app/)
 
 The game was built by [Jonathan Rycx](https://github.com/Rixouu), who leads product direction, design, and implementation across the Rixouu party-game repos.
 
@@ -23,8 +23,8 @@ The game was built by [Jonathan Rycx](https://github.com/Rixouu), who leads prod
 
 ### 🌍 Scenes & atmosphere
 
-- **8 scene packs**: Race Track, Mountain Valley, Ancient Greek, Desert Grand Prix, Neo Tokyo, Space Colony, Tropical Island, Volcanic Racing.
-- Each scene uses a layered **background + track + crowd** art set for a more bespoke look.
+- **8 scene packs**: Enchanted Forest, Mountain Valley, Ancient Greek, Desert Grand Prix, Neo Tokyo, Space Colony, Tropical Island, Volcanic Racing.
+- Each scene uses layered **background + track** art for a more bespoke look.
 - **3 race lengths**: Sprint (quick), Classic (balanced), Marathon (epic).
 
 ### ⚡ Power-ups (optional)
@@ -89,20 +89,20 @@ pnpm preview   # optional — serve dist/ at http://localhost:4173
 
 ### Play online
 
-No install needed — **[derby-royale.vercel.app](https://derby-royale.vercel.app/)**
+No install needed — **[pixel-olympics.vercel.app](https://pixel-olympics.vercel.app/)**
 
 ### Deploy on Vercel
 
-1. Import [github.com/Rixouu/derby-royale](https://github.com/Rixouu/derby-royale) in Vercel.
+1. Import [github.com/Rixouu/pixel-olympics](https://github.com/Rixouu/pixel-olympics) in Vercel.
 2. Framework preset: **Vite** (auto-detected) — install: `pnpm install`, build: `pnpm build`, output: `dist`.
-3. Deploy — live at **[derby-royale.vercel.app](https://derby-royale.vercel.app/)**.
+3. Deploy — live at **[pixel-olympics.vercel.app](https://pixel-olympics.vercel.app/)**.
 
 Optional share URL: **`/play`** (rewrite to `/`). Details in **[docs/deployment.md](docs/deployment.md)**.
 
 ## 📁 Project Structure
 
 ```txt
-derby-royale/
+pixel-olympics/
 ├── index.html              # App shell + meta (Vite entry)
 ├── src/
 │   ├── main.js             # Boot
@@ -117,7 +117,7 @@ derby-royale/
 │       ├── scenes.js       # Scene registry ← edit to add scene packs
 │       └── engine.js       # Canvas, race sim, UI, main loop
 ├── public/
-│   ├── background/         # Scene packs (background, track, crowd)
+│   ├── background/         # Scene packs (background + track)
 │   ├── fonts/              # WOFF2 font files
 │   ├── power/              # Shared power-up artwork
 │   ├── favicon.svg

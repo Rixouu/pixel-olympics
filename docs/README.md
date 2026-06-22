@@ -1,6 +1,6 @@
 # Documentation
 
-Guides for playing, deploying, and extending **Derby Royale**.
+Guides for playing, deploying, and extending **Pixel Olympics**.
 
 | Doc | Description |
 |-----|-------------|

@@ -1,6 +1,6 @@
 # Deployment (Vercel)
 
-Derby Royale is a **Vite static site** — build output goes to `dist/`. No server functions or environment variables.
+Pixel Olympics is a **Vite static site** — build output goes to `dist/`. No server functions or environment variables.
 
 ## Vercel project settings
 
@@ -12,7 +12,7 @@ Derby Royale is a **Vite static site** — build output goes to `dist/`. No serv
 | Install Command | `pnpm install` |
 | Node.js | 20+ recommended |
 
-Connect the GitHub repo [Rixouu/derby-royale](https://github.com/Rixouu/derby-royale) and deploy from `main`.
+Connect the GitHub repo [Rixouu/pixel-olympics](https://github.com/Rixouu/pixel-olympics) and deploy from `main`.
 
 ## What gets deployed
 
@@ -24,11 +24,11 @@ Connect the GitHub repo [Rixouu/derby-royale](https://github.com/Rixouu/derby-ro
 | `dist/fonts/*.woff2` | Self-hosted Press Start 2P & Jersey 10 |
 | `dist/favicon.*`, `og-image.png`, etc. | Copied from `public/` |
 
-Legacy redirect: `public/derby-royale.html` → `/`
+Redirect helpers: `public/derby-royale.html` and `public/pixel-olympics.html` → `/`
 
 ## URLs
 
-**https://derby-royale.vercel.app/**
+**https://pixel-olympics.vercel.app/**
 
 Optional alias: **`/play`** → `/` (rewrite in `vercel.json`)
 
@@ -52,8 +52,8 @@ pnpm preview     # serve dist/ at http://localhost:4173
 
 Production meta tags point to:
 
-- **Site:** `https://derby-royale.vercel.app/`
-- **Image:** `https://derby-royale.vercel.app/og-image.png`
+- **Site:** `https://pixel-olympics.vercel.app/`
+- **Image:** `https://pixel-olympics.vercel.app/og-image.png`
 
 ## Headers & caching (`vercel.json`)
 
@@ -73,6 +73,7 @@ Vercel dashboard → **Deployments** → previous deployment → **Promote to Pr
 - [ ] `/` loads the lobby
 - [ ] Fonts render (no Google Fonts network call)
 - [ ] `/derby-royale.html` redirects to `/`
+- [ ] `/pixel-olympics.html` redirects to `/`
 - [ ] `/play` serves the game
 - [ ] Test on a phone via preview URL
 
