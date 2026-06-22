@@ -389,7 +389,6 @@ function drawScene(n){
     ctx.restore();
   }
 
-  drawPixelGround(m.topPad-m.horizonH,m.topPad,S.ground,S.groundDark,S.laneLine);
   drawPixelLaneBand(S,m,n);
   drawPixelGround(m.topPad+m.bandH+2,VH,S.groundDark,S.track,S.laneLine);
   if(S.trackTexture && backgroundImages[S.trackTexture] && artAlpha>0) {
