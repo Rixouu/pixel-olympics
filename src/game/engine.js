@@ -101,10 +101,54 @@ function getVisualTrackLaneCount(n){
   }
   return n;
 }
-function laneSlotIndex(i, n){
-  const visualCount=getVisualTrackLaneCount(n);
-  if(visualCount<=n) return i;
-  return Math.round((visualCount-n)/2)+i;
+function centeredLaneSlots(n, visualCount){
+  const start=Math.max(0, Math.round((visualCount-n)/2));
+  return Array.from({ length: n }, function(_, i){ return start+i; });
+}
+function laneFormationSlots(n){
+  const S=SCENES[sceneIdx]||{};
+  const visualCount=Math.max(1, getVisualTrackLaneCount(n));
+  const configuredSlots=S.laneFormations && Array.isArray(S.laneFormations[n]) ? S.laneFormations[n] : null;
+  const rawSlots=configuredSlots && configuredSlots.length
+    ? configuredSlots.slice(0, n)
+    : ((S.laneSlotMode||'center')==='top'
+      ? Array.from({ length: n }, function(_, i){ return i; })
+      : centeredLaneSlots(n, visualCount));
+  return rawSlots.map(function(slot){
+    return clamp(Math.round(slot), 0, visualCount-1);
+  });
+}
+function sceneLaneCenterOffset(slot){
+  const S=SCENES[sceneIdx]||{};
+  const offsets=(isPortraitMobile() && Array.isArray(S.laneCenterOffsetsMobile))
+    ? S.laneCenterOffsetsMobile
+    : S.laneCenterOffsets;
+  if(!Array.isArray(offsets)) return 0;
+  return Number(offsets[slot]||0);
+}
+function laneGeometryForSlot(slot, n, centerYOverride){
+  const m=trackMetrics(n);
+  const clampedSlot=clamp(Math.round(slot), 0, Math.max(0, m.visualLaneCount-1));
+  const defaultCenter=m.topPad+m.laneH*(clampedSlot+0.5)+sceneLaneCenterOffset(clampedSlot);
+  const centerY=centerYOverride==null ? defaultCenter : centerYOverride;
+  return {
+    slot: clampedSlot,
+    top: centerY-m.laneH*0.5,
+    bottom: centerY+m.laneH*0.5,
+    center: centerY,
+    height: m.laneH,
+  };
+}
+function laneGeometryForPlayer(i, n){
+  const slots=laneFormationSlots(n);
+  const slot=slots[Math.max(0, Math.min(slots.length-1, i))] ?? 0;
+  return laneGeometryForSlot(slot, n);
+}
+function laneGeometries(n){
+  const count=Math.max(1, getVisualTrackLaneCount(n));
+  return Array.from({ length: count }, function(_, slot){
+    return laneGeometryForSlot(slot, n);
+  });
 }
 function sceneTrackApronHeight(){
   const S=SCENES[sceneIdx]||{};
@@ -178,11 +222,10 @@ function trackMetrics(n){
 let camX=0;                                       // world x at left edge (in world units)
 let pxPerUnit=10;                                 // screen px per world unit (set per frame)
 function worldToScreenX(wx){ return (wx - camX)*pxPerUnit; }
-function laneCenterY(i,n){ const m=trackMetrics(n); return m.topPad + m.laneH*(laneSlotIndex(i,n)+0.5); }
+function laneCenterY(i,n){ return laneGeometryForPlayer(i,n).center; }
 function laneBounds(i,n){
-  const m=trackMetrics(n);
-  const top=m.topPad + m.laneH*laneSlotIndex(i,n);
-  return { top: top, bottom: top + m.laneH };
+  const lane=laneGeometryForPlayer(i,n);
+  return { top: lane.top, bottom: lane.bottom };
 }
 
 /* ============================================================
@@ -199,7 +242,9 @@ function syncCanvasVisibility(){
 
 function sceneRacerYOffset(){
   const S=SCENES[sceneIdx];
-  return S && S.racerYOffset ? S.racerYOffset : 0;
+  if(!S) return 0;
+  if(isPortraitMobile() && S.racerYOffsetMobile!=null) return S.racerYOffsetMobile;
+  return S.racerYOffset||0;
 }
 
 function powerupBoxRenderSize(laneH){
@@ -215,19 +260,23 @@ function powerupBoxRenderSize(laneH){
   );
 }
 
-function racerLayout(ch, laneI, n, popScale, bob){
-  const m=trackMetrics(n);
-  const lane=laneBounds(laneI,n);
-  const padTop=Math.max(2, Math.round(m.laneH*0.04));
-  const padBottom=Math.max(3, Math.round(m.laneH*0.06));
-  const fittedScale=Math.min(PXS, Math.max(1, (m.laneH-padTop-padBottom)/GH));
+function racerLayout(ch, lane, popScale, bob){
+  const laneH=Math.max(1, lane.height||Math.max(1, lane.bottom-lane.top));
+  const padTop=Math.max(2, Math.round(laneH*0.04));
+  const padBottom=Math.max(3, Math.round(laneH*0.06));
+  const fittedScale=Math.min(PXS, Math.max(1, (laneH-padTop-padBottom)/GH));
   const scale=fittedScale*popScale;
   const sz=spriteScreenSize(ch,scale);
-  const baseBaseline=lane.bottom-padBottom-bob;
   const sceneOffset=sceneRacerYOffset();
-  const minOffset=lane.top+padTop+sz.h-baseBaseline;
-  const baseline=baseBaseline+clamp(sceneOffset,minOffset,0);
-  const shadowY=lane.bottom-padBottom*0.35;
+  const centeredBaseline=lane.center+sz.h*0.5-bob;
+  const minBaseline=lane.top+padTop+sz.h;
+  const maxBaseline=lane.bottom-padBottom;
+  const baseline=clamp(centeredBaseline+sceneOffset, minBaseline, maxBaseline);
+  const shadowY=clamp(
+    baseline-Math.max(4, Math.round(sz.h*0.08)),
+    lane.top+padTop+2,
+    lane.bottom-Math.max(2, Math.round(padBottom*0.35))
+  );
   return {
     laneTop: lane.top,
     laneBottom: lane.bottom,
@@ -602,9 +651,126 @@ function newRacer(p,i){
     nextBurst:rnd(1.5,4),burstEnd:-1,nextStumble:rnd(4,9),stumbleEnd:-1,
     boostEnd:-1,boostMult:1,starEnd:-1,zapEnd:-1,spinEnd:-1,
     shielded:false,dropBanana:false,lastPwT:-99,
-    finished:false,place:0,ledOnce:false,finishT:0,settleX:0,neverLedFlag:false};
+    finished:false,place:0,ledOnce:false,finishT:0,settleX:0,neverLedFlag:false,
+    laneSlot:i,laneCenterY:null,laneRepairCount:0};
 }
-function buildRacers(){ racers=players.map(function(p,i){return newRacer(p,i);}); finishOrder=[]; }
+function nextOpenLaneSlot(preferredSlots, occupied, visualLaneCount){
+  for(let i=0;i<preferredSlots.length;i++){
+    const slot=preferredSlots[i];
+    if(!occupied.has(slot)) return slot;
+  }
+  for(let slot=0;slot<visualLaneCount;slot++){
+    if(!occupied.has(slot)) return slot;
+  }
+  return Math.max(0, visualLaneCount-1);
+}
+function assignRacerLaneSlot(racer, slot, n, instant){
+  const lane=laneGeometryForSlot(slot, n);
+  racer.laneSlot=lane.slot;
+  if(instant || !Number.isFinite(racer.laneCenterY)){
+    racer.laneCenterY=lane.center;
+  }
+}
+function alignRacersToFormation(options){
+  const opts=options||{};
+  const n=Math.max(racers.length,1);
+  const desiredSlots=laneFormationSlots(n);
+  const visualLaneCount=Math.max(1, getVisualTrackLaneCount(n));
+  const occupied=new Set();
+  racers.forEach(function(racer, idx){
+    let slot=desiredSlots[idx];
+    if(slot==null || occupied.has(slot)){
+      slot=nextOpenLaneSlot(desiredSlots, occupied, visualLaneCount);
+      racer.laneRepairCount=(racer.laneRepairCount||0)+1;
+    }
+    occupied.add(slot);
+    assignRacerLaneSlot(racer, slot, n, !!opts.instant);
+  });
+}
+function repairLaneAlignment(reason){
+  if(!racers.length) return false;
+  alignRacersToFormation({ instant: reason==='build' });
+  if(typeof console!=='undefined' && console.warn && reason){
+    console.warn('[lane-alignment] repaired racer lane assignments:', reason);
+  }
+  return true;
+}
+function validateLaneAssignments(n){
+  const visualLaneCount=Math.max(1, getVisualTrackLaneCount(n));
+  const occupied=new Set();
+  for(let i=0;i<racers.length;i++){
+    const racer=racers[i];
+    if(!Number.isInteger(racer.laneSlot) || racer.laneSlot<0 || racer.laneSlot>=visualLaneCount) return false;
+    if(occupied.has(racer.laneSlot)) return false;
+    occupied.add(racer.laneSlot);
+  }
+  return true;
+}
+function updateLaneAlignment(dt){
+  if(!racers.length) return;
+  const n=Math.max(players.length,1);
+  if(!validateLaneAssignments(n)){
+    repairLaneAlignment('invalid-slot');
+  }
+  const ease=1-Math.exp(-Math.max(dt, 0)*14);
+  racers.forEach(function(racer){
+    const lane=laneGeometryForSlot(racer.laneSlot, n);
+    if(!Number.isFinite(racer.laneCenterY)){
+      racer.laneCenterY=lane.center;
+      return;
+    }
+    racer.laneCenterY += (lane.center-racer.laneCenterY)*ease;
+    if(Math.abs(lane.center-racer.laneCenterY)<0.1){
+      racer.laneCenterY=lane.center;
+    }
+  });
+  const minGap=Math.max(1, trackMetrics(n).laneH*0.72);
+  const ordered=racers.slice().sort(function(a,b){ return a.laneCenterY-b.laneCenterY; });
+  for(let i=1;i<ordered.length;i++){
+    if((ordered[i].laneCenterY-ordered[i-1].laneCenterY)<minGap){
+      repairLaneAlignment('overlap-detected');
+      break;
+    }
+  }
+}
+function racerLaneGeometry(racer, n){
+  const target=laneGeometryForSlot(racer.laneSlot, n);
+  const centerY=Number.isFinite(racer.laneCenterY) ? racer.laneCenterY : target.center;
+  return laneGeometryForSlot(racer.laneSlot, n, centerY);
+}
+function getLaneAlignmentReport(){
+  const n=Math.max(players.length,1);
+  return {
+    playerCount: n,
+    visualLaneCount: getVisualTrackLaneCount(n),
+    formationSlots: laneFormationSlots(n).slice(),
+    lanes: laneGeometries(n).map(function(lane){
+      return {
+        slot: lane.slot,
+        top: Number(lane.top.toFixed(2)),
+        center: Number(lane.center.toFixed(2)),
+        bottom: Number(lane.bottom.toFixed(2)),
+        height: Number(lane.height.toFixed(2)),
+      };
+    }),
+    racers: racers.map(function(racer){
+      const lane=racerLaneGeometry(racer, n);
+      return {
+        racerIndex: racer.i,
+        laneSlot: racer.laneSlot,
+        laneCenterY: Number(lane.center.toFixed(2)),
+        laneTop: Number(lane.top.toFixed(2)),
+        laneBottom: Number(lane.bottom.toFixed(2)),
+        laneRepairCount: racer.laneRepairCount||0,
+      };
+    }),
+  };
+}
+function buildRacers(){
+  racers=players.map(function(p,i){return newRacer(p,i);});
+  finishOrder=[];
+  alignRacersToFormation({ instant:true });
+}
 
 /* ---------- power-ups ---------- */
 function spawnPowerups(){ powerups=[]; bananas=[]; if(!powerUpsOn)return;
@@ -789,7 +955,9 @@ function drawRacersAndItems(n){
   });
 
   // racers — draw far lane (top) first for correct overlap
-  var order=racers.map(function(_,idx){return idx;}).sort(function(a,b){return racers[a].i-racers[b].i;});
+  var order=racers.map(function(_,idx){return idx;}).sort(function(a,b){
+    return racerLaneGeometry(racers[a], n).center-racerLaneGeometry(racers[b], n).center;
+  });
   order.forEach(function(idx){
     var r=racers[idx]; var sx=worldToScreenX(r.x);
     var ch=CHARACTERS[r.p.charIdx];
@@ -801,7 +969,7 @@ function drawRacersAndItems(n){
     var bobBase=Math.max(1.5, Math.min(p*1.1,m.laneH*0.08));
     var bobMul=(ch.sheet && ch.sheet.bobMul) ? ch.sheet.bobMul : 1;
     var bob=(r.gait>0.3)? Math.abs(Math.sin(r.phase*Math.PI*0.5))*bobBase*bobMul : 0;
-    var layout=racerLayout(ch, r.i, n, popScale, bob);
+    var layout=racerLayout(ch, racerLaneGeometry(r, n), popScale, bob);
     var scale=layout.scale;
     var sz=layout.size;
     var baseline=layout.baseline;
@@ -1187,8 +1355,10 @@ function installDebugTools(){
     setPlayerCount: debugSetPlayerCount,
     resetLaneAudit: resetLaneAudit,
     getLaneAudit: getLaneAuditSummary,
+    getLaneAlignmentReport: getLaneAlignmentReport,
     getPlayerCount: function(){ return players.length; },
     startRace: function(){ if(state==='lobby') startRace(); },
+    repairLaneAlignment: function(){ return repairLaneAlignment('debug-trigger'); },
     returnToLobby: debugReturnToLobby,
   };
 }
@@ -1219,6 +1389,7 @@ function frame(now){
   syncCanvasVisibility();
 
   if(state==='racing'||state==='countdown') updateRacers(dt);
+  updateLaneAlignment(realDt);
   updateCamera(realDt);
 
   // render

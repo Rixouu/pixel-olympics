@@ -12,6 +12,7 @@ const COMMON_SCENE = {
   minBottomPad: 120,
   minBottomPadMobile: 72,
   visualLaneCount: 6,
+  laneSlotMode: 'top',
   racerYOffset: 0,
 };
 
@@ -132,9 +133,9 @@ const SCENES = [
     trackHeightScaleMobile: 0.78,
     trackTextureRenderMode: 'proportional',
     trackTextureSlices: {
-      laneSurfaceTop: 0.15,
-      laneSurfaceBottom: 0.88,
-      lowerApronTop: 0.88,
+      laneSurfaceTop: 0.225,
+      laneSurfaceBottom: 0.8,
+      lowerApronTop: 0.8,
     },
   }),
   makeScene({
