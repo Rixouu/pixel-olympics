@@ -14,6 +14,7 @@
   /* ---------- overlays ---------- */
   .overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;padding:10px;z-index:10}
   #lobby.overlay,#results.overlay{background:var(--scrim, rgba(127,213,240,.28))}
+  #orientationPrompt.overlay{background:rgba(18,35,72,.52);z-index:14}
   .hidden{display:none !important}
   .card{pointer-events:auto;background:var(--panel);border:4px solid var(--line);
     box-shadow:8px 8px 0 0 rgba(61,48,24,.28);padding:18px 16px 14px;width:min(440px,95vw);
@@ -158,6 +159,24 @@
   .results-start{margin-top:12px}
   .res-note{margin:10px 0 4px;padding:9px 11px;font-size:18px;line-height:1.2;background:var(--panel2);border:3px solid var(--line);color:var(--ink)}
   .res-note b{color:var(--acc2)}
+  /* ---------- orientation prompt ---------- */
+  .orientation-card{width:min(392px,84vw);padding:18px 18px 18px;text-align:center}
+  .orientation-title{font-size:clamp(18px,6vw,26px);margin:4px 0 14px}
+  .orientation-copy{font-size:21px;line-height:1.18;color:var(--dim)}
+  .orientation-copy span{color:var(--acc);font-family:'Press Start 2P',monospace;font-size:.7em;text-transform:uppercase}
+  .orientation-visual{display:flex;flex-direction:column;align-items:center;gap:14px;margin:20px 0 18px}
+  .orientation-device{position:relative;display:inline-flex;align-items:center;justify-content:center}
+  .orientation-device img{display:block;image-rendering:pixelated}
+  .orientation-device.portrait img{width:min(108px,26vw)}
+  .orientation-device.landscape img{width:min(280px,74vw)}
+  .orientation-arrow{width:56px;height:auto;image-rendering:pixelated}
+  .orientation-badge{position:absolute;display:flex;align-items:center;justify-content:center;min-width:48px;height:48px;padding:0 10px;
+    border-radius:999px;border:4px solid var(--line);box-shadow:3px 3px 0 0 rgba(61,48,24,.22);font-family:'Press Start 2P',monospace;font-size:12px;line-height:1;color:#fff}
+  .orientation-badge.bad{top:-8px;right:-12px;background:var(--bad)}
+  .orientation-badge.good{top:-10px;right:-8px;background:#35b654}
+  .orientation-btn{margin:2px auto 0;width:min(82%,280px);padding:11px 10px;font-size:10px}
+  .orientation-footnote{margin-top:12px;font-size:18px;line-height:1.15;color:var(--dim)}
+  .orientation-footnote::before{content:'★';display:inline-block;margin-right:7px;color:var(--hi2);font-size:15px;line-height:1;vertical-align:-1px}
   /* ---------- corner ---------- */
   .corner-btn{position:fixed;z-index:11;width:42px;height:42px;border:3px solid var(--line);background:var(--panel);
     box-shadow:3px 3px 0 0 rgba(61,48,24,.28);cursor:pointer;font-size:20px;line-height:1;padding:0}
@@ -263,6 +282,27 @@
     .toggle-row .ts{font-size:14px}
     .rules{font-size:18px}
     .pw-legend{font-size:17px}
+    .orientation-card{width:min(calc(100vw - 34px),392px);padding:18px 14px 16px}
+    .orientation-title{margin:2px 0 12px}
+    .orientation-copy{font-size:18px}
+    .orientation-visual{gap:12px;margin:18px 0 16px}
+    .orientation-device.portrait img{width:min(102px,28vw)}
+    .orientation-device.landscape img{width:min(270px,78vw)}
+    .orientation-arrow{width:52px}
+    .orientation-badge{min-width:42px;height:42px;font-size:10px}
+    .orientation-footnote{font-size:16px}
+  }
+  @media (max-width:620px) and (orientation:portrait){
+    .orientation-card{width:min(calc(100vw - 34px),392px);padding:18px 14px 16px}
+    .orientation-title{font-size:clamp(18px,6vw,24px);margin:0 0 12px}
+    .orientation-copy{font-size:16px;line-height:1.12}
+    .orientation-visual{gap:11px;margin:18px 0 15px}
+    .orientation-device.portrait img{width:min(92px,25vw)}
+    .orientation-device.landscape img{width:min(252px,72vw)}
+    .orientation-arrow{width:44px}
+    .orientation-badge{min-width:34px;height:34px;border-width:3px;font-size:8px}
+    .orientation-btn{width:min(78%,250px);padding:10px 10px;font-size:10px}
+    .orientation-footnote{margin-top:10px;font-size:15px}
   }
   @media (max-height:620px){
     .card{padding:12px 12px 10px}
@@ -271,5 +311,23 @@
     .tagline{margin-bottom:8px}
     #playerList{gap:6px}
     .lobby-panels{min-height:0}
+    .orientation-copy{font-size:18px}
+    .orientation-visual{margin:14px 0 12px}
+    .orientation-device.portrait img{width:92px}
+    .orientation-device.landscape img{width:min(236px,72vw)}
+    .orientation-arrow{width:46px}
+  }
+  @media (max-height:760px) and (orientation:portrait){
+    .orientation-card{padding:15px 13px 13px}
+    .orientation-title{margin-bottom:10px}
+    .orientation-copy{font-size:15px}
+    .orientation-visual{gap:9px;margin:13px 0 11px}
+    .orientation-device.portrait img{width:82px}
+    .orientation-device.landscape img{width:min(224px,66vw)}
+    .orientation-arrow{width:38px}
+    .orientation-footnote{font-size:11px}
+  }
+  @media (max-width:620px) and (max-height:900px) and (orientation:portrait){
+    .orientation-card{max-height:calc(100vh - 16px)}
   }
   @media (prefers-reduced-motion:reduce){#countNum{animation:none}}

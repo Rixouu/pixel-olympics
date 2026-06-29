@@ -25,6 +25,24 @@ let view, ctx;
 let VW=0, VH=0, DPR=1;           // device pixel size
 let PXS=4;                        // pixels-per-art-pixel (scale); set on resize
 const POWERUP_IMAGE_BOUNDS={ srcX:246, srcY:243, srcW:604, srcH:543 };
+const ORIENTATION_PROMPT_STORAGE_KEY='pixel-olympics-orientation-prompt-dismissed';
+function readStoredFlag(key){
+  if(typeof window==='undefined') return false;
+  try{
+    return window.localStorage.getItem(key)==='true';
+  }catch(error){
+    return false;
+  }
+}
+function writeStoredFlag(key, value){
+  if(typeof window==='undefined') return;
+  try{
+    if(value) window.localStorage.setItem(key, 'true');
+    else window.localStorage.removeItem(key);
+  }catch(error){
+    // Ignore storage failures in restricted browsing contexts.
+  }
+}
 function resize(){
   DPR=Math.min(window.devicePixelRatio||1,2);
   VW=window.innerWidth; VH=window.innerHeight;
@@ -38,6 +56,7 @@ function resize(){
 }
 
 let tabHidden=false;
+let orientationPromptDismissed=readStoredFlag(ORIENTATION_PROMPT_STORAGE_KEY);
 
 const DEFAULT_SCENE_KEY='tropical-island';
 const DEFAULT_SCENE_IDX=Math.max(0, SCENES.findIndex(function(scene){ return scene.key===DEFAULT_SCENE_KEY; }));
@@ -1042,7 +1061,7 @@ function viewUnits(){
 /* ============================================================
    COUNTDOWN / RACE FLOW
    ============================================================ */
-let lobbyEl, listEl, addBtn, startBtn, restartBtn, hudEl, hudRows, countWrap, countNum, resultsEl, eventToast, finishFlash, photoTag;
+let lobbyEl, listEl, addBtn, startBtn, restartBtn, hudEl, hudRows, countWrap, countNum, resultsEl, eventToast, finishFlash, photoTag, orientationPromptEl, orientationPromptBtn;
 let lobbyTabBtns=[], lobbyPanels=[];
 let paintSceneSeg=function(){};
 let paintLengthSeg=function(){};
@@ -1094,6 +1113,20 @@ function updateLanguageSwitcher(){
     button.setAttribute('aria-pressed', active ? 'true' : 'false');
   });
 }
+function shouldShowOrientationPrompt(){
+  return isPortraitMobile() && !orientationPromptDismissed;
+}
+function syncOrientationPrompt(){
+  if(!orientationPromptEl) return;
+  const show=shouldShowOrientationPrompt();
+  orientationPromptEl.classList.toggle('hidden', !show);
+  orientationPromptEl.setAttribute('aria-hidden', show ? 'false' : 'true');
+}
+function dismissOrientationPrompt(){
+  orientationPromptDismissed=true;
+  writeStoredFlag(ORIENTATION_PROMPT_STORAGE_KEY, true);
+  syncOrientationPrompt();
+}
 function applyStaticTranslations(){
   applyDocumentTranslations();
   const muteBtn=document.getElementById('muteBtn');
@@ -1140,6 +1173,10 @@ function applyStaticTranslations(){
   if(document.getElementById('lobbyFootnote')) document.getElementById('lobbyFootnote').textContent=t('lobby.footnote');
   if(photoTag) photoTag.textContent=t('results.eyebrow').toUpperCase();
   if(document.getElementById('hudTitle')) document.getElementById('hudTitle').textContent=t('hud.title');
+  if(document.getElementById('orientationPromptTitle')) document.getElementById('orientationPromptTitle').textContent=t('orientationPrompt.title');
+  if(document.getElementById('orientationPromptBody')) document.getElementById('orientationPromptBody').innerHTML=t('orientationPrompt.bodyHTML');
+  if(orientationPromptBtn) orientationPromptBtn.textContent=t('orientationPrompt.button');
+  if(document.getElementById('orientationPromptFootnote')) document.getElementById('orientationPromptFootnote').textContent=t('orientationPrompt.footnote');
   if(document.getElementById('resultsEyebrow')) document.getElementById('resultsEyebrow').textContent=t('results.eyebrow');
   if(document.getElementById('resultsTitle')) document.getElementById('resultsTitle').textContent=t('results.title');
   if(document.getElementById('againBtn')) document.getElementById('againBtn').textContent=t('results.raceAgain');
@@ -1382,7 +1419,11 @@ function bindUi(){
   ctx=view.getContext('2d');
   view.style.transition='opacity 160ms ease-out';
   view.style.opacity='0';
-  window.addEventListener('resize',function(){ resize(); if(listEl&&state==='lobby') renderLobby(); });
+  window.addEventListener('resize',function(){
+    resize();
+    syncOrientationPrompt();
+    if(listEl&&state==='lobby') renderLobby();
+  });
   document.addEventListener('visibilitychange',function(){ tabHidden=document.hidden; });
   resize();
 
@@ -1408,6 +1449,8 @@ function bindUi(){
   eventToast=document.getElementById('eventToast');
   finishFlash=document.getElementById('finishFlash');
   photoTag=document.getElementById('photoTag');
+  orientationPromptEl=document.getElementById('orientationPrompt');
+  orientationPromptBtn=document.getElementById('orientationPromptBtn');
   lobbyTabBtns=Array.prototype.slice.call(document.querySelectorAll('.lobby-tab'));
   lobbyPanels=Array.prototype.slice.call(document.querySelectorAll('.lobby-panel'));
   Array.prototype.forEach.call(document.querySelectorAll('#languageSwitch [data-lang]'), function(button){
@@ -1419,6 +1462,9 @@ function bindUi(){
   document.getElementById('againBtn').addEventListener('click',function(){ resultsEl.classList.add('hidden'); startRace(); });
   document.getElementById('editBtn').addEventListener('click',function(){ clearRaceTimers(); resultsEl.classList.add('hidden'); countWrap.classList.add('hidden'); state='lobby'; syncRestartButton(); hudEl.classList.add('hidden'); buildRacers(); renderLobby(); lobbyEl.classList.remove('hidden'); });
   restartBtn.addEventListener('click',function(){ if(state==='lobby')return; startRace(); });
+  if(orientationPromptBtn){
+    orientationPromptBtn.addEventListener('click', dismissOrientationPrompt);
+  }
   lobbyTabBtns.forEach(function(btn){
     btn.addEventListener('click',function(){ showLobbyTab(btn.dataset.tab); });
   });
@@ -1461,6 +1507,7 @@ function bindUi(){
   applyStaticTranslations();
   showLobbyTab('roster');
   syncRestartButton();
+  syncOrientationPrompt();
 }
 
 function debugSetPlayerCount(count){

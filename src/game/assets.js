@@ -1,10 +1,15 @@
-import { loadImage } from './image-loader.js';
+import { loadImage, loadImages } from './image-loader.js';
 import { CHARACTERS } from './characters.js';
 import { SCENES } from './scenes.js';
 import { loadSpriteSheets } from './sprite-sheets.js';
 import { loadBackgroundImages, allSceneImageSources, sceneImageSources } from './backgrounds.js';
 
 const POWERUP_ASSET_SRC = '/power/power-up.png';
+const ORIENTATION_ASSET_SRCS = [
+  '/elements/phone-portrait.png',
+  '/elements/phone-landscape.png',
+  '/elements/arrow.png',
+];
 
 export const gameAssets = {
   backgroundImages: {},
@@ -57,6 +62,7 @@ export function preloadGameAssets(sceneIdx) {
     loadSpriteSheets(CHARACTERS),
     loadBackgroundImages(remainingSceneSrcs),
     loadImage(POWERUP_ASSET_SRC),
+    loadImages(ORIENTATION_ASSET_SRCS, 'ui image'),
   ]).then(function(results){
     if(results[0].status === 'fulfilled') gameAssets.sheetImages = results[0].value;
     else console.error(results[0].reason);
@@ -66,6 +72,8 @@ export function preloadGameAssets(sceneIdx) {
 
     if(results[2].status === 'fulfilled') gameAssets.powerupImage = results[2].value;
     else console.error(results[2].reason);
+
+    if(results[3].status !== 'fulfilled') console.error(results[3].reason);
 
     return gameAssets;
   });

@@ -51,6 +51,12 @@ const TRANSLATIONS = {
     hud: {
       title: 'Live standings',
     },
+    orientationPrompt: {
+      title: 'BETTER IN LANDSCAPE!',
+      bodyHTML: 'Pixel Olympics is best<br>experienced in<br><span>landscape mode</span>.<br><br>You can play in portrait,<br>but landscape gives<br>you the full view!',
+      button: 'GOT IT!',
+      footnote: 'Both orientations are supported',
+    },
     results: {
       eyebrow: 'Photo finish',
       title: 'RESULTS',
@@ -152,6 +158,12 @@ const TRANSLATIONS = {
     },
     hud: {
       title: 'Classement live',
+    },
+    orientationPrompt: {
+      title: 'MIEUX EN PAYSAGE !',
+      bodyHTML: 'Pixel Olympics est bien mieux<br>en<br><span>mode paysage</span>.<br><br>Vous pouvez jouer en portrait,<br>mais le paysage vous donne<br>la vue complete !',
+      button: 'COMPRIS !',
+      footnote: 'Les deux orientations sont prises en charge',
     },
     results: {
       eyebrow: "Photo d'arrivee",

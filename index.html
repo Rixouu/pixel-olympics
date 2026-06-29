@@ -112,6 +112,29 @@
   </div>
 </div>
 
+<div id="orientationPrompt" class="overlay hidden" aria-hidden="true">
+  <div class="card orientation-card" role="dialog" aria-modal="true" aria-labelledby="orientationPromptTitle" aria-describedby="orientationPromptBody">
+    <h1 id="orientationPromptTitle" class="orientation-title">BETTER IN LANDSCAPE!</h1>
+    <div id="orientationPromptBody" class="orientation-copy">
+      Pixel Olympics is best experienced in <span>landscape mode</span>.<br>
+      You can play in portrait, but landscape gives you the full view!
+    </div>
+    <div class="orientation-visual" aria-hidden="true">
+      <div class="orientation-device portrait">
+        <img src="/elements/phone-portrait.png" alt="">
+        <div class="orientation-badge bad">X</div>
+      </div>
+      <img class="orientation-arrow" src="/elements/arrow.png" alt="">
+      <div class="orientation-device landscape">
+        <img src="/elements/phone-landscape.png" alt="">
+        <div class="orientation-badge good">OK</div>
+      </div>
+    </div>
+    <button id="orientationPromptBtn" class="btn btn-primary orientation-btn" type="button">GOT IT!</button>
+    <div id="orientationPromptFootnote" class="orientation-footnote">Both orientations are supported</div>
+  </div>
+</div>
+
 <script type="module" src="/src/main.js"></script>
 </body>
 </html>
