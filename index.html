@@ -93,52 +93,86 @@
 
           <div class="lobby-panels">
             <section class="lobby-panel active" id="panel-roster" role="tabpanel" data-panel="roster">
-              <div class="section-head">
-                <div id="rosterLabel" class="ctrl-label">Racers</div>
-                <div id="rosterHint" class="hint">Tap the <b>colour</b> to recolour - tap the <b>racer</b> to change</div>
-                <div id="rosterMobileHint" class="mobile-hint">Use the numbered slots below to edit each racer on mobile</div>
+              <div class="panel-hero">
+                <div class="panel-hero-title-row">
+                  <img class="panel-hero-icon" src="/elements/icon-racers.png" alt="">
+                  <div id="rosterLabel" class="panel-hero-title">Racers</div>
+                  <img class="panel-hero-icon panel-hero-icon-right" src="/elements/icon-racers.png" alt="">
+                </div>
+                <div id="rosterHint" class="panel-hero-subtitle">Tap the <b>colour</b> to recolour - tap the <b>racer</b> to change</div>
+                <div id="rosterMobileHint" class="panel-hero-note">Use the numbered slots below to edit each racer on mobile</div>
               </div>
-              <div id="playerList"></div>
-              <button id="addBtn" class="btn btn-ghost" type="button">+ ADD PLAYER</button>
+              <div class="panel-frame panel-frame-roster">
+                <div id="playerList"></div>
+                <button id="addBtn" class="btn btn-ghost" type="button">+ ADD PLAYER</button>
+              </div>
             </section>
 
             <section class="lobby-panel hidden" id="panel-setup" role="tabpanel" data-panel="setup">
-              <div class="settings">
-                <div class="ctrl"><div id="sceneLabel" class="ctrl-label">Scene</div>
-                  <button id="scenePickerToggle" class="scene-picker-toggle" type="button" aria-expanded="false" aria-label="Choose scene" title="Choose scene"></button>
-                  <div class="seg scene-grid" id="sceneSeg"></div>
+              <div class="panel-hero">
+                <div class="panel-hero-title-row">
+                  <img class="panel-hero-icon" src="/elements/icon-flag.png" alt="">
+                  <div id="setupTitle" class="panel-hero-title">Race Setup</div>
+                  <img class="panel-hero-icon panel-hero-icon-right" src="/elements/icon-flag.png" alt="">
                 </div>
-                <div class="ctrl"><div id="raceLengthLabel" class="ctrl-label">Race length</div>
-                  <div class="seg length-grid" id="lengthSeg"></div>
+                <div id="setupHint" class="panel-hero-subtitle">Build your challenge</div>
+              </div>
+              <div class="panel-frame panel-frame-setup">
+                <div class="settings">
+                  <div class="ctrl ctrl-scene">
+                    <div id="sceneLabel" class="ctrl-label">Scene</div>
+                    <button id="scenePickerToggle" class="scene-picker-toggle" type="button" aria-expanded="false" aria-label="Choose scene" title="Choose scene"></button>
+                    <div class="seg scene-grid" id="sceneSeg"></div>
+                  </div>
+                  <div class="ctrl ctrl-length">
+                    <div id="raceLengthLabel" class="ctrl-label">Race length</div>
+                    <div class="seg length-grid" id="lengthSeg"></div>
+                  </div>
+                  <label class="toggle-row">
+                    <div>
+                      <div id="powerUpsTitle" class="tt">Power-ups</div>
+                      <div id="powerUpsDesc" class="ts">Boosts, bananas, shields &amp; chaos</div>
+                    </div>
+                    <div class="switch"><input type="checkbox" id="powerToggle" checked><span></span></div>
+                  </label>
+                  <div id="setupPowerupsLegend" class="rules-powerups setup-powerups"></div>
                 </div>
-                <label class="toggle-row"><div><div id="powerUpsTitle" class="tt">Power-ups</div><div id="powerUpsDesc" class="ts">Boosts, bananas, shields &amp; chaos</div></div>
-                  <div class="switch"><input type="checkbox" id="powerToggle" checked><span></span></div></label>
+                <button id="panelStartBtn" class="btn btn-primary btn-start panel-start-btn" type="button">START THE RACE</button>
+                <div id="setupFootnote" class="panel-footnote">Drink responsibly - water is also a drink 18+</div>
               </div>
             </section>
 
             <section class="lobby-panel hidden" id="panel-help" role="tabpanel" data-panel="help">
-              <div class="section-head">
-                <div id="howToPlayLabel" class="ctrl-label">How To Play</div>
-                <div id="howToPlayHint" class="hint">The rules are simple.</div>
+              <div class="panel-hero">
+                <div class="panel-hero-title-row">
+                  <img class="panel-hero-icon" src="/elements/icon-title-book.png" alt="">
+                  <div id="howToPlayLabel" class="panel-hero-title">How To Play</div>
+                  <img class="panel-hero-icon panel-hero-icon-right" src="/elements/icon-title-book.png" alt="">
+                </div>
+                <div id="howToPlayHint" class="panel-hero-subtitle">The rules are simple.</div>
               </div>
-              <div id="howToPlayBody" class="rules">Pick a racer, choose a colour, name them - then cheer them to the finish.<br><br>
-                <b>Winner</b> hands out sips equal to the number of players. Everyone else drinks their finishing place; <b>last place</b> gets one extra.</div>
-              <div class="pw-legend">
-                <span data-powerup="boost"><i class="pw-boost"></i> Boost - burst of speed</span>
-                <span data-powerup="star"><i class="pw-star"></i> Star - speed + immunity</span>
-                <span data-powerup="banana"><i class="pw-banana"></i> Banana - drop a trap</span>
-                <span data-powerup="lightning"><i class="pw-lightning"></i> Lightning - slow those ahead</span>
-                <span data-powerup="shield"><i class="pw-shield"></i> Shield - block one hit</span>
+              <div class="panel-frame panel-frame-help">
+                <div id="howToPlayBody" class="rules rules-structured">Pick a racer, choose a colour, name them - then cheer them to the finish.<br><br>
+                  <b>Winner</b> hands out sips equal to the number of players. Everyone else drinks their finishing place; <b>last place</b> gets one extra.</div>
+                <button id="helpStartBtn" class="btn btn-primary btn-start help-start-btn" type="button">LET'S RACE!</button>
+                <div id="helpFootnote" class="panel-footnote">Drink responsibly - water is also a drink 18+</div>
               </div>
             </section>
 
             <section class="lobby-panel hidden" id="panel-rules" role="tabpanel" data-panel="rules">
-              <div class="section-head">
-                <div id="rulesLabel" class="ctrl-label">Rules</div>
-                <div id="rulesHint" class="hint">Know the game.</div>
+              <div class="panel-hero">
+                <div class="panel-hero-title-row">
+                  <img class="panel-hero-icon" src="/elements/icon-flags.png" alt="">
+                  <div id="rulesLabel" class="panel-hero-title">Rules</div>
+                  <img class="panel-hero-icon panel-hero-icon-right" src="/elements/icon-flags.png" alt="">
+                </div>
+                <div id="rulesHint" class="panel-hero-subtitle">Know the game.</div>
               </div>
-              <div id="rulesBody" class="rules">Keep the basics close when someone needs them.<br><br>
-                <b>Slowpoke clause:</b> never led the race - +1 sip of shame.</div>
+              <div class="panel-frame panel-frame-rules">
+                <div id="rulesBody" class="rules rules-structured">Keep the basics close when someone needs them.<br><br>
+                  <b>Slowpoke clause:</b> never led the race - +1 sip of shame.</div>
+                <div id="rulesFootnote" class="panel-footnote">Drink responsibly - water is also a drink 18+</div>
+              </div>
             </section>
           </div>
         </div>

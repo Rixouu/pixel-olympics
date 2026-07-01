@@ -53,6 +53,7 @@ function resize(){
   // art scale: keep racers a sensible on-screen size across devices
   PXS = Math.max(4, Math.round(Math.min(VW,VH)/115));
   invalidateTrackMetrics();
+  syncViewportClasses();
 }
 
 let tabHidden=false;
@@ -66,7 +67,34 @@ let START_X=LENGTHS[lengthIdx].start, FINISH_X=LENGTHS[lengthIdx].finish;
 let trackMetricsCache=null, trackMetricsCacheN=-1, trackMetricsCacheScene=-1;
 function invalidateTrackMetrics(){ trackMetricsCache=null; trackMetricsCacheN=-1; trackMetricsCacheScene=-1; }
 function clamp(v,min,max){ return Math.max(min,Math.min(max,v)); }
-function isPortraitMobile(){ return VW<=700 && VH>VW; }
+function effectiveViewportWidth(){
+  const widths=[
+    window.innerWidth||0,
+    document.documentElement ? document.documentElement.clientWidth : 0,
+    window.visualViewport ? Math.round(window.visualViewport.width) : 0,
+  ].filter(Boolean);
+  return widths.length ? Math.min.apply(null,widths) : VW;
+}
+function effectiveViewportHeight(){
+  const heights=[
+    window.innerHeight||0,
+    document.documentElement ? document.documentElement.clientHeight : 0,
+    window.visualViewport ? Math.round(window.visualViewport.height) : 0,
+  ].filter(Boolean);
+  return heights.length ? Math.min.apply(null,heights) : VH;
+}
+function syncViewportClasses(){
+  if(typeof document==='undefined' || !document.body) return;
+  const width=effectiveViewportWidth();
+  const height=effectiveViewportHeight();
+  document.body.classList.toggle('viewport-compact', width<=620);
+  document.body.classList.toggle('viewport-portrait', height>width);
+}
+function isPortraitMobile(){
+  const width=effectiveViewportWidth();
+  const height=effectiveViewportHeight();
+  return width<=700 && height>width;
+}
 function usesProportionalTrackTexture(S){
   return !!(S && S.trackTexture && S.trackTextureRenderMode === 'proportional');
 }
@@ -1061,7 +1089,7 @@ function viewUnits(){
 /* ============================================================
    COUNTDOWN / RACE FLOW
    ============================================================ */
-let lobbyEl, lobbyHomeEl, lobbyPanelsWrap, lobbyBackBtn, listEl, addBtn, startBtn, restartBtn, hudEl, hudRows, countWrap, countNum, resultsEl, eventToast, finishFlash, photoTag, orientationPromptEl, orientationPromptBtn;
+let lobbyEl, lobbyHomeEl, lobbyPanelsWrap, lobbyBackBtn, listEl, addBtn, startBtn, panelStartBtn, helpStartBtn, restartBtn, hudEl, hudRows, countWrap, countNum, resultsEl, eventToast, finishFlash, photoTag, orientationPromptEl, orientationPromptBtn;
 let lobbyTabBtns=[], lobbyPanels=[];
 let paintSceneSeg=function(){};
 let paintLengthSeg=function(){};
@@ -1086,7 +1114,10 @@ function updateSceneToggleLabel(activeIdx){
   const scene=SCENES[activeIdx];
   toggle.title=t('lobby.chooseScene');
   toggle.setAttribute('aria-label', t('lobby.chooseScene'));
-  toggle.innerHTML='<span>'+escapeHtml(sceneDisplayName(scene))+'</span><span class="meta">'+(activeIdx+1)+' / '+SCENES.length+'</span><span class="caret" aria-hidden="true"></span>';
+  toggle.innerHTML=
+    '<img class="scene-toggle-thumb" src="'+escapeHtml(scene.backdrop)+'" alt="">'
+    +'<span class="scene-toggle-copy"><span class="scene-toggle-name">'+escapeHtml(sceneDisplayName(scene))+'</span><span class="scene-toggle-meta">'+escapeHtml(scenePickerLabel(scene))+'</span></span>'
+    +'<span class="scene-toggle-right"><span class="meta">'+(activeIdx+1)+' / '+SCENES.length+'</span><span class="caret" aria-hidden="true"></span></span>';
 }
 function renderLengthSeg(){
   const seg=document.getElementById('lengthSeg');
@@ -1166,6 +1197,8 @@ function applyStaticTranslations(){
   if(document.getElementById('menuHelpLabel')) document.getElementById('menuHelpLabel').textContent=t('lobby.help.title');
   if(document.getElementById('menuRulesLabel')) document.getElementById('menuRulesLabel').textContent=t('lobby.rules.title');
   if(lobbyBackBtn) lobbyBackBtn.textContent=t('controls.back');
+  if(document.getElementById('setupTitle')) document.getElementById('setupTitle').textContent=t('lobby.tabs.setup');
+  if(document.getElementById('setupHint')) document.getElementById('setupHint').textContent=t('lobby.setupHint');
   if(lobbyTabs) lobbyTabs.setAttribute('aria-label', t('lobby.sectionsAria'));
   if(document.getElementById('tab-roster')) document.getElementById('tab-roster').textContent=t('lobby.tabs.roster');
   if(document.getElementById('tab-setup')) document.getElementById('tab-setup').textContent=t('lobby.tabs.setup');
@@ -1177,12 +1210,15 @@ function applyStaticTranslations(){
   if(document.getElementById('raceLengthLabel')) document.getElementById('raceLengthLabel').textContent=t('lobby.raceLength');
   if(document.getElementById('powerUpsTitle')) document.getElementById('powerUpsTitle').textContent=t('lobby.powerUpsTitle');
   if(document.getElementById('powerUpsDesc')) document.getElementById('powerUpsDesc').textContent=t('lobby.powerUpsDesc');
+  if(document.getElementById('setupPowerupsLegend')) document.getElementById('setupPowerupsLegend').innerHTML=t('lobby.setupPowerupsHTML');
   if(document.getElementById('howToPlayLabel')) document.getElementById('howToPlayLabel').textContent=t('lobby.help.title');
   if(document.getElementById('howToPlayHint')) document.getElementById('howToPlayHint').textContent=t('lobby.help.hint');
   if(document.getElementById('howToPlayBody')) document.getElementById('howToPlayBody').innerHTML=t('lobby.help.bodyHTML');
+  if(helpStartBtn) helpStartBtn.textContent=t('lobby.help.cta');
   if(document.getElementById('rulesLabel')) document.getElementById('rulesLabel').textContent=t('lobby.rules.title');
   if(document.getElementById('rulesHint')) document.getElementById('rulesHint').textContent=t('lobby.rules.hint');
   if(document.getElementById('rulesBody')) document.getElementById('rulesBody').innerHTML=t('lobby.rules.bodyHTML');
+  if(panelStartBtn) panelStartBtn.textContent=t('lobby.startRace');
   Array.prototype.forEach.call(document.querySelectorAll('[data-powerup]'), function(node){
     const powerKey=node.getAttribute('data-powerup');
     const iconClass=powerupLabels[powerKey];
@@ -1190,6 +1226,9 @@ function applyStaticTranslations(){
     node.innerHTML='<i class="'+iconClass+'"></i> '+escapeHtml(t('powerups.'+powerKey));
   });
   if(document.getElementById('lobbyFootnote')) document.getElementById('lobbyFootnote').textContent=t('lobby.footnote');
+  if(document.getElementById('setupFootnote')) document.getElementById('setupFootnote').textContent=t('lobby.footnote');
+  if(document.getElementById('helpFootnote')) document.getElementById('helpFootnote').textContent=t('lobby.footnote');
+  if(document.getElementById('rulesFootnote')) document.getElementById('rulesFootnote').textContent=t('lobby.footnote');
   if(photoTag) photoTag.textContent=t('results.eyebrow').toUpperCase();
   if(document.getElementById('hudTitle')) document.getElementById('hudTitle').textContent=t('hud.title');
   if(document.getElementById('orientationPromptTitle')) document.getElementById('orientationPromptTitle').textContent=t('orientationPrompt.title');
@@ -1313,7 +1352,7 @@ function renderSceneSeg(){
     button.type='button';
     button.dataset.i=String(idx);
     button.title=sceneDisplayName(scene);
-    button.textContent=scenePickerLabel(scene);
+    button.innerHTML='<img class="scene-card-thumb" src="'+escapeHtml(scene.backdrop)+'" alt=""><span class="scene-card-copy"><span class="scene-card-name">'+escapeHtml(scenePickerLabel(scene))+'</span><span class="scene-card-meta">'+(idx+1)+' / '+SCENES.length+'</span></span>';
     seg.appendChild(button);
   });
   updateSceneToggleLabel(sceneIdx);
@@ -1322,7 +1361,7 @@ function renderSceneSeg(){
 function freeColor(){ const used=players.map(function(p){return p.colorIdx;}); for(let i=0;i<COLORS.length;i++) if(used.indexOf(i)<0)return i; return Math.floor(Math.random()*COLORS.length); }
 function nextFreeColor(from){ const used=players.map(function(p){return p.colorIdx;}); for(let k=1;k<=COLORS.length;k++){ const i=(from+k)%COLORS.length; if(used.indexOf(i)<0)return i; } return (from+1)%COLORS.length; }
 
-function isCompactLobby(){ return window.matchMedia('(max-width:620px)').matches; }
+function isCompactLobby(){ return effectiveViewportWidth()<=620; }
 function setMobileRosterIdx(idx){
   if(!players.length){ mobileRosterIdx=0; return; }
   mobileRosterIdx=(idx+players.length)%players.length;
@@ -1360,7 +1399,10 @@ function makePlayerEditor(p,i,mode){
       head.appendChild(rm);
     }
     const controls=document.createElement('div'); controls.className='player-mobile-controls';
-    controls.appendChild(sw); controls.appendChild(pick); controls.appendChild(input);
+    const art=document.createElement('div'); art.className='player-mobile-art';
+    art.appendChild(sw); art.appendChild(pick);
+    controls.appendChild(art);
+    controls.appendChild(input);
     row.appendChild(head); row.appendChild(controls);
     return row;
   }
@@ -1389,19 +1431,106 @@ function makePlayerEditor(p,i,mode){
 function renderLobby(){ listEl.innerHTML='';
   if(isCompactLobby()){
     setMobileRosterIdx(mobileRosterIdx);
-    const activePlayer=players[mobileRosterIdx];
-    const tabs=document.createElement('div'); tabs.className='player-mobile-tabs';
-    players.forEach(function(p,i){
-      const slot=document.createElement('button');
-      slot.type='button';
-      slot.className='player-mobile-slot'+(i===mobileRosterIdx?' active':'');
-      slot.innerHTML='<span class="player-mobile-slot-dot" style="background:'+COLORS[p.colorIdx]+'"></span><span class="player-mobile-slot-num">'+(i+1)+'</span>';
-      slot.title=displayName(p,i);
-      slot.addEventListener('click',function(){ mobileRosterIdx=i; renderLobby(); });
-      tabs.appendChild(slot);
-    });
-    listEl.appendChild(tabs);
-    listEl.appendChild(makePlayerEditor(activePlayer,mobileRosterIdx,'mobile'));
+    const counter=document.createElement('div');
+    counter.className='player-mobile-count';
+    counter.textContent=t('lobby.rosterSelected',{ count: players.length, max: MAX_PLAYERS });
+    listEl.appendChild(counter);
+
+    const cards=document.createElement('div');
+    cards.className='player-mobile-card-list';
+    for(let i=0;i<MAX_PLAYERS;i+=1){
+      if(i<players.length){
+        const p=players[i];
+        const card=document.createElement('div');
+        card.className='player-mobile-card'+(i===mobileRosterIdx?' active':'');
+        card.style.setProperty('--racer-card', COLORS[p.colorIdx]);
+        card.title=displayName(p,i);
+        card.addEventListener('click',function(){ mobileRosterIdx=i; renderLobby(); });
+
+        const artWrap=document.createElement('div');
+        artWrap.className='player-mobile-card-art';
+
+        const spriteBtn=document.createElement('button');
+        spriteBtn.type='button';
+        spriteBtn.className='player-mobile-card-sprite';
+        spriteBtn.title=t('player.changeRacerTitle');
+        spriteBtn.addEventListener('click',function(e){
+          e.stopPropagation();
+          mobileRosterIdx=i;
+          p.charIdx=(p.charIdx+1)%CHAR_COUNT;
+          renderLobby();
+        });
+        const spriteCanvas=document.createElement('canvas');
+        spriteCanvas.width=44; spriteCanvas.height=44;
+        spriteBtn.appendChild(spriteCanvas);
+        drawPickPreview(spriteCanvas,p.charIdx,COLORS[p.colorIdx]);
+
+        const swatchBtn=document.createElement('button');
+        swatchBtn.type='button';
+        swatchBtn.className='player-mobile-card-color';
+        swatchBtn.style.background=COLORS[p.colorIdx];
+        swatchBtn.title=t('player.colorTitle');
+        swatchBtn.addEventListener('click',function(e){
+          e.stopPropagation();
+          mobileRosterIdx=i;
+          p.colorIdx=nextFreeColor(p.colorIdx);
+          renderLobby();
+        });
+
+        artWrap.appendChild(spriteBtn);
+        artWrap.appendChild(swatchBtn);
+
+        const copy=document.createElement('div');
+        copy.className='player-mobile-card-copy';
+
+        const label=document.createElement('div');
+        label.className='player-mobile-card-label';
+        label.textContent=t('player.racerSlot',{ num: i+1 });
+
+        const input=document.createElement('input');
+        input.className='player-mobile-card-input';
+        input.maxLength=14;
+        input.placeholder=getFallbackName(i);
+        input.value=p.name;
+        input.addEventListener('click',function(e){
+          e.stopPropagation();
+          mobileRosterIdx=i;
+        });
+        input.addEventListener('input',function(){
+          p.name=input.value;
+          updateCompactRosterCardNames();
+        });
+
+        copy.appendChild(label);
+        copy.appendChild(input);
+
+        const status=document.createElement('div');
+        status.className='player-mobile-card-status';
+        status.setAttribute('aria-hidden','true');
+        status.textContent='✓';
+
+        card.appendChild(artWrap);
+        card.appendChild(copy);
+        card.appendChild(status);
+        cards.appendChild(card);
+      } else {
+        const slot=document.createElement('button');
+        slot.type='button';
+        slot.className='player-mobile-slot player-mobile-slot-empty';
+        slot.innerHTML='<span class="player-mobile-slot-plus">+</span><span class="player-mobile-slot-label">'+escapeHtml(t('lobby.addRacer'))+'</span>';
+        slot.title=t('lobby.addPlayer',{ count: players.length, max: MAX_PLAYERS });
+        slot.disabled=players.length>=MAX_PLAYERS;
+        slot.addEventListener('click',function(){
+          if(players.length>=MAX_PLAYERS) return;
+          players.push({name:'',colorIdx:freeColor(),charIdx:players.length%CHAR_COUNT});
+          mobileRosterIdx=players.length-1;
+          renderLobby();
+        });
+        cards.appendChild(slot);
+      }
+    }
+    listEl.appendChild(cards);
+
   } else {
     setDesktopRosterIdx(desktopRosterIdx);
     const activePlayer=players[desktopRosterIdx];
@@ -1422,6 +1551,15 @@ function renderLobby(){ listEl.innerHTML='';
     ? t('lobby.rosterFull',{ max: MAX_PLAYERS })
     : t('lobby.addPlayer',{ count: players.length, max: MAX_PLAYERS });
   addBtn.disabled=players.length>=MAX_PLAYERS; addBtn.style.opacity=addBtn.disabled?0.5:1;
+}
+
+function updateCompactRosterCardNames(){
+  if(!isCompactLobby()) return;
+  Array.prototype.forEach.call(document.querySelectorAll('.player-mobile-card-input'), function(input, idx){
+    const p=players[idx];
+    if(!p) return;
+    input.value=p.name;
+  });
 }
 
 function wireSeg(id,getIdx,setIdx,onPaint){ const seg=document.getElementById(id);
@@ -1459,6 +1597,8 @@ function bindUi(){
   listEl=document.getElementById('playerList');
   addBtn=document.getElementById('addBtn');
   startBtn=document.getElementById('startBtn');
+  panelStartBtn=document.getElementById('panelStartBtn');
+  helpStartBtn=document.getElementById('helpStartBtn');
   restartBtn=document.getElementById('restartBtn');
   hudEl=document.getElementById('hud');
   hudRows=document.getElementById('hudRows');
@@ -1533,7 +1673,15 @@ function bindUi(){
   }
   paintLengthSeg=wireSeg('lengthSeg',function(){return lengthIdx;},function(i){lengthIdx=i; START_X=LENGTHS[i].start; FINISH_X=LENGTHS[i].finish;});
   document.getElementById('powerToggle').addEventListener('change',function(e){ powerUpsOn=e.target.checked; });
-  startBtn.addEventListener('click',function(){ if(state!=='lobby')return; ac(); players.forEach(function(p,i){ p.name=displayName(p,i); }); startRace(); });
+  function startRaceFromLobby(){
+    if(state!=='lobby') return;
+    ac();
+    players.forEach(function(p,i){ p.name=displayName(p,i); });
+    startRace();
+  }
+  startBtn.addEventListener('click',startRaceFromLobby);
+  if(panelStartBtn) panelStartBtn.addEventListener('click',startRaceFromLobby);
+  if(helpStartBtn) helpStartBtn.addEventListener('click',startRaceFromLobby);
   applyStaticTranslations();
   showLobbyTab('roster');
   showLobbyHome();
